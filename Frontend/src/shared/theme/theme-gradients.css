@@ -1,0 +1,84 @@
+/*
+ * Theme gradients.
+ *
+ * The flat themes looked flat: every button, card and bar was one colour. Each theme now carries
+ * two stops per surface in `palettes.ts`, mapped to `--theme-*-from` / `--theme-*-to` in
+ * `brand-themes.css`. Simple has no palette, so its stops are declared here on `:root`.
+ *
+ * Paper and Slate have no stops by the product owner's choice. The mapping gives them no fallback,
+ * so every gradient below is invalid for them, `background-image` computes to `none`, and the flat
+ * `background-color` utilities on the same elements show exactly as before. That also keeps their
+ * hover colours working.
+ *
+ * Only `background-image` is set, never `background-color`, so the flat colour stays underneath as
+ * the fallback and as what the reading colours and forced colours see. The reading colours in
+ * accessibility.css already clear `background-image` with `!important`; forced colours are
+ * handled at the end of this file.
+ *
+ * `contrast.test.ts` measures the text that sits on each stop, in every theme.
+ */
+
+/* Simple, the original apricot palette, which is the absence of `data-theme`. */
+:root {
+  --theme-hero-from: #fff7ee;
+  --theme-hero-to: #fbdcb8;
+  --theme-shell-from: #fff7ee;
+  --theme-shell-to: #fbe3c6;
+  --theme-action-from: #7a5a3f;
+  --theme-action-to: #3f2f22;
+  --theme-card-from: #ffffff;
+  --theme-card-to: #fff4e6;
+  --theme-feature-from: #fffaf2;
+  --theme-feature-to: #ffefd9;
+}
+
+@layer components {
+  /* Bands that carry hero text: the landing header and the final call to action. */
+  .theme-gradient-hero {
+    background-image: linear-gradient(to right, var(--theme-hero-from), var(--theme-hero-to));
+  }
+
+  /* Sticky top bars, on the customer portal and under /admin. */
+  .theme-gradient-shell {
+    background-image: linear-gradient(to right, var(--theme-shell-from), var(--theme-shell-to));
+  }
+
+  /*
+   * Primary buttons. The hover flips the gradient rather than mixing in a new colour, so the text
+   * only ever sits on the two stops the contrast test measures. Keep `bg-action-dark` on the
+   * element: the top bar colour rules key on it.
+   */
+  .theme-gradient-action {
+    background-image: linear-gradient(135deg, var(--theme-action-from), var(--theme-action-to));
+  }
+
+  .theme-gradient-action:hover {
+    background-image: linear-gradient(135deg, var(--theme-action-to), var(--theme-action-from));
+  }
+
+  /* Key cards: package tiers, the assistant card and the portal home cards. */
+  .theme-key-card {
+    background-image: linear-gradient(165deg, var(--theme-card-from), var(--theme-card-to));
+  }
+
+  /* The Signature package, one step richer than the cards beside it. */
+  .theme-feature-card {
+    background-image: linear-gradient(160deg, var(--theme-feature-from), var(--theme-feature-to));
+  }
+}
+
+/*
+ * A Windows contrast theme takes over text and surface colours but keeps background images, so a
+ * gradient would stay under text drawn in a colour the page no longer controls.
+ */
+@media (forced-colors: active) {
+  :is(
+    .theme-gradient-hero,
+    .theme-gradient-shell,
+    .theme-gradient-action,
+    .theme-key-card,
+    .theme-feature-card
+  ) {
+    background-image: none;
+  }
+}

@@ -1,0 +1,70 @@
+/*
+ * Maison Noir decorations: black lacquer and champagne gold.
+ *
+ * An art deco fan on the page, gold corners and a fine inner line on key cards, arched gold
+ * photo frames, a gold rule with a diamond on the section breaks, one hero word in gold
+ * italics, and buttons in spaced capitals. The sheen that crosses a button on hover started here
+ * and is now shared by every decorated theme (decor-press.css).
+ * Shared positioning and the accessibility guards are in decor-base.css.
+ */
+
+html[data-theme='noir'] .theme-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 24' width='48' height='24'%3E%3Cg fill='none' stroke='%23D4B26A' stroke-opacity='.09'%3E%3Cpath d='M0 24a24 24 0 0 1 48 0'/%3E%3Cpath d='M8 24a16 16 0 0 1 32 0'/%3E%3Cpath d='M16 24a8 8 0 0 1 16 0'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 48px 24px;
+}
+
+html[data-theme='noir'] .theme-key-card {
+  outline: 1px solid rgb(212 178 106 / 0.38);
+  outline-offset: -8px;
+}
+
+html[data-theme='noir'] .theme-key-card::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23D4B26A' stroke-width='1.2' transform='rotate(0 24 24)'%3E%3Cpath d='M2 46V14A12 12 0 0 1 14 2h32'/%3E%3Cpath d='M7 46V17A10 10 0 0 1 17 7h29' opacity='.5'/%3E%3Cpath d='M2 2l9 9M2 10l5 5M10 2l5 5' opacity='.8'/%3E%3Ccircle cx='13' cy='13' r='1.6' fill='%23D4B26A'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23D4B26A' stroke-width='1.2' transform='rotate(180 24 24)'%3E%3Cpath d='M2 46V14A12 12 0 0 1 14 2h32'/%3E%3Cpath d='M7 46V17A10 10 0 0 1 17 7h29' opacity='.5'/%3E%3Cpath d='M2 2l9 9M2 10l5 5M10 2l5 5' opacity='.8'/%3E%3Ccircle cx='13' cy='13' r='1.6' fill='%23D4B26A'/%3E%3C/g%3E%3C/svg%3E");
+  background-position:
+    left top,
+    right bottom;
+  background-repeat: no-repeat;
+  background-size: 34px 34px;
+  pointer-events: none;
+}
+
+html[data-theme='noir'] .theme-photo-frame {
+  padding: 6px;
+  border-radius: 999px 999px 10px 10px;
+  background-image: linear-gradient(135deg, #f3e2ae 0%, #d4b26a 42%, #a8803e 100%);
+}
+
+html[data-theme='noir'] .theme-photo-frame img {
+  border-radius: 999px 999px 6px 6px;
+}
+
+html[data-theme='noir'] .theme-divider {
+  display: block;
+  background-image: linear-gradient(90deg, transparent, #d4b26a 30%, #d4b26a 70%, transparent);
+  background-size: 100% 1px;
+}
+
+html[data-theme='noir'] .theme-divider-mark {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cg fill='%23D4B26A' fill-opacity='.35' stroke='%23D4B26A' stroke-width='1'%3E%3Cpath d='M12 4l8 7-8 7-8-7z'/%3E%3C/g%3E%3Ccircle cx='2' cy='11' r='1.2' fill='%23D4B26A'/%3E%3Ccircle cx='22' cy='11' r='1.2' fill='%23D4B26A'/%3E%3C/svg%3E");
+}
+
+/* Gold italics on dark are large display text, well above 3:1 at every stop of the gold. */
+html[data-theme='noir'] .theme-accent-word {
+  padding-right: 0.06em;
+  font-style: italic;
+  background-image: linear-gradient(135deg, #f3e2ae 0%, #d4b26a 42%, #a8803e 100%);
+  background-clip: text;
+  color: transparent;
+  box-decoration-break: clone;
+}
+
+/* The sheen that crosses the button on hover is shared by every decorated theme (decor-press.css). */
+html[data-theme='noir'] .theme-gradient-action {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}

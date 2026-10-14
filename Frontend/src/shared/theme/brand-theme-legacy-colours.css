@@ -1,0 +1,191 @@
+/*
+ * GENERATED FILE. Do not hand-edit.
+ * Regenerate with: node scripts/generate-theme-legacy-colours.mjs
+ *
+ * Maps the colours this application still hard-codes onto semantic theme tokens, so every page
+ * follows the brand theme without each call site being rewritten. Two sources: Tailwind
+ * arbitrary colour classes (hex, rgb() or hsl()), where the value is part of the class name,
+ * and plain stylesheets that write hex into declarations. The reading colours in
+ * accessibility.css are left out on purpose: a theme must never remap them.
+ *
+ * Colours are classified by chroma and lightness rather than by name. Near-neutrals fall onto
+ * the surface, text or border scale by lightness; saturated colours keep their meaning through
+ * the status tokens; a pale off-axis panel stays a tint by mixing its status colour into the
+ * card surface. Because this product's palette is warm, a warm cast is not treated as intent,
+ * but a green, blue or pink is.
+ *
+ * Variants and opacity modifiers are part of a Tailwind class name, so they are reproduced: a
+ * hover rule carries :hover, and an opacity modifier or an rgba() alpha is folded into the
+ * token with color-mix.
+ *
+ * Deliberately no !important. html[data-theme] .cls already outranks Tailwind own .cls, and
+ * staying non-important is what lets the accessibility high-contrast modes (which do use
+ * !important) keep overriding the theme, as they must.
+ *
+ * Rules apply only under a theme, so the default apricot palette renders exactly as before.
+ *
+ * 0 class rules over 0 call sites, plus 31 stylesheet rules.
+ */
+
+/* Plain stylesheets: declarations re-emitted with their colours mapped onto theme tokens. */
+
+html[data-theme] .maps-review-page {
+  --maps-review-ink: var(--color-notice-primary);
+  --maps-review-copy: var(--color-notice-primary);
+  --maps-review-muted: var(--color-notice-secondary);
+  --maps-review-border: var(--color-border-soft);
+  --maps-review-track: var(--color-surface-card);
+  --maps-review-gold: var(--color-accent-foreground);
+  --maps-review-gold-dark: var(--color-accent-foreground);
+  --maps-review-focus: var(--color-accent-foreground);
+  --maps-review-surface: var(--color-surface-card);
+  --maps-review-soft-surface: var(--color-surface-card);
+}
+
+html[data-theme] .maps-review-brand-logo {
+  background-color: var(--color-accent-foreground);
+}
+
+html[data-theme] .maps-review-brand-icon {
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-header-avatar {
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-modal-cancel {
+  border: 1px solid var(--color-border-soft);
+}
+
+html[data-theme] .maps-review-modal-post {
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-modal-avatar {
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-modal-error {
+  color: var(--color-status-danger);
+}
+
+html[data-theme] .maps-review-modal-textarea {
+  border: 1px solid var(--color-border-soft);
+}
+
+html[data-theme] .maps-review-modal-photo-button {
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface-card);
+}
+
+html[data-theme] .maps-review-photo-picker__message {
+  color: var(--status-danger, var(--color-status-danger));
+}
+
+html[data-theme] .maps-review-photo-preview {
+  border: 1px solid var(--color-border-soft);
+}
+
+html[data-theme] .maps-review-photo-remove {
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-page .maps-review-icon-button:hover,
+html[data-theme] .maps-review-page .maps-review-sort-button:hover {
+  border-color: var(--color-border-soft);
+}
+
+html[data-theme] .maps-review-page .maps-review-icon-button:focus-visible,
+html[data-theme] .maps-review-page .maps-review-sort-button:focus-visible,
+html[data-theme] .maps-review-page .maps-review-sort-button--active {
+  border-color: var(--color-border-soft);
+}
+
+html[data-theme] .maps-review-search-input {
+  border: 1px solid var(--color-border-soft);
+}
+
+html[data-theme] .maps-review-topic--active {
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-topic--active .maps-review-icon,
+html[data-theme] .maps-review-topic--active .maps-review-topic__count {
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-card {
+  border: 1px solid var(--color-border-soft);
+}
+
+html[data-theme] .maps-review-card--highlighted {
+  background: var(--color-surface-card);
+}
+
+html[data-theme] .maps-review-avatar {
+  background: var(--color-status-success);
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-delete-error {
+  color: var(--color-status-danger);
+}
+
+html[data-theme] .maps-review-share-channel {
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-share-channel--facebook {
+  background: var(--color-accent-foreground);
+}
+
+html[data-theme] .maps-review-share-channel--x {
+  background: var(--color-action-dark);
+}
+
+html[data-theme] .maps-review-share-channel--whatsapp {
+  background: var(--color-status-success);
+}
+
+html[data-theme] .maps-review-share-link {
+  border: 1px solid var(--color-border-soft);
+}
+
+html[data-theme] .maps-review-share-error {
+  color: var(--color-status-danger);
+}
+
+html[data-theme] .maps-review-write-button {
+  color: var(--color-title);
+}
+
+html[data-theme] .maps-review-auth-inline-error {
+  color: var(--color-status-danger);
+}
+
+html[data-theme] .theme-hero-band::before {
+  mask-image: linear-gradient(to right, transparent, var(--color-action-dark) 33%);
+}
+
+/*
+ * Inline SVG presentation attributes. A CSS rule outranks a presentation attribute, so these
+ * reach chart gridlines and the like without editing the component. Third-party brand marks
+ * are excluded by value and keep their own colours.
+ */
+
+html[data-theme] [fill='#3f3027'] {
+  fill: var(--color-notice-primary);
+}
+
+html[data-theme] [stroke='#bda99b'] {
+  stroke: var(--color-control-border);
+}
+
+html[data-theme] [stroke='#eee3da'] {
+  stroke: var(--color-border-soft);
+}
+
+html[data-theme] [stroke='#f1e8df'] {
+  stroke: var(--color-border-soft);
+}

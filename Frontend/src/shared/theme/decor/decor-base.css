@@ -1,0 +1,192 @@
+/*
+ * Theme decorations: the shared rules.
+ *
+ * The product owner picked the decorations per theme in September 2026. They live on a handful of
+ * marker classes, and only on the customer-facing shell and key cards: the landing page, /book and
+ * the pet parent home. Forms, tables and the admin side carry no marker, so nothing here reaches
+ * them.
+ *
+ *   .theme-pattern        page ground behind the sections (landing and /book <main>)
+ *   .theme-divider        a section break, drawn only by themes that have one (ThemeDivider)
+ *   .theme-key-card       package tiers, the assistant card, the portal home cards
+ *   .theme-package-card   the package tiers on the landing page and /book
+ *   .theme-feature-card   the Signature package
+ *   .theme-signature-badge the motif pinned to the Signature card (ThemeSignatureBadge)
+ *   .theme-photo-frame    the landing pet photographs
+ *   .theme-accent-word    one word in the landing hero title
+ *   .theme-section-title  landing section headings
+ *   .theme-hero-ornament  Garden's glow and Moonlight's stars (ThemeHeroOrnament)
+ *   .theme-wiggle-host / .theme-wiggle-icon  the promise icons
+ *   .theme-gradient-action primary buttons (from theme-gradients.css)
+ *   .theme-select-check / .theme-select-ring  the check and the ring on a chosen /book package
+ *
+ * The press and impact motion on buttons and package cards is in decor-press.css.
+ *
+ * Each theme's own file (decor-<theme>.css) draws on these. This file holds what they share: the
+ * decorative elements are hidden by default, and every decoration goes away under the reading
+ * colours, in forced colours, and, for motion, under reduced motion.
+ *
+ * Performance rules: pictures are small inline SVGs on backgrounds or pseudo-elements, no filters,
+ * no backdrop blur, and motion only animates `transform`, `translate`, `rotate`, `scale` and
+ * `opacity`.
+ */
+
+/* Drawn by the themes that use them, and by nothing else. */
+.theme-divider,
+.theme-hero-ornament,
+.theme-select-ring {
+  display: none;
+}
+
+/* The badge, the ornament and the card pseudo-elements position against these. */
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='garden'],
+    [data-theme='noir'],
+    [data-theme='royal'],
+    [data-theme='moonlight'],
+    [data-theme='milk-cream']
+  )
+  .theme-key-card {
+  position: relative;
+}
+
+.theme-signature-badge {
+  position: absolute;
+  top: -14px;
+  right: 16px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.theme-divider-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 22px;
+  translate: -50% -50%;
+  background-color: var(--color-surface-cream);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 24px 22px;
+}
+
+/* The line stays inside the page column's content box, clear of its gutters. */
+.theme-divider {
+  position: relative;
+  height: 28px;
+  background-clip: content-box;
+  background-origin: content-box;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+@media (width >= 48rem) {
+  .theme-hero-ornament {
+    position: absolute;
+    inset: 0 0 0 50%;
+    overflow: hidden;
+    pointer-events: none;
+  }
+}
+
+/*
+ * The reading colours flatten every surface to one pair of colours and clear background images on
+ * elements, but not on pseudo-elements, and they do not touch shadows, rotation or padding. So
+ * every decoration is taken away here, whatever theme is set.
+ */
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  :is(.theme-divider, .theme-signature-badge, .theme-hero-ornament, .theme-select-ring) {
+  display: none !important;
+}
+
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  :is(
+    .theme-key-card,
+    .theme-package-card,
+    .theme-feature-card,
+    .theme-gradient-action,
+    .theme-section-title
+  )::before,
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  :is(
+    .theme-key-card,
+    .theme-package-card,
+    .theme-feature-card,
+    .theme-gradient-action,
+    .theme-section-title
+  )::after {
+  display: none !important;
+}
+
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  :is(.theme-photo-frame, .theme-gradient-action, .theme-key-card) {
+  rotate: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* A Windows contrast theme takes over colours; decoration drawn in the page's own would clash. */
+@media (forced-colors: active) {
+  :is(.theme-divider, .theme-signature-badge, .theme-hero-ornament) {
+    display: none;
+  }
+
+  /* The themes switch the ring on with a stronger selector, so this one has to insist. */
+  .theme-select-ring {
+    display: none !important;
+  }
+
+  :is(
+    .theme-key-card,
+    .theme-package-card,
+    .theme-feature-card,
+    .theme-gradient-action,
+    .theme-section-title
+  )::before,
+  :is(
+    .theme-key-card,
+    .theme-package-card,
+    .theme-feature-card,
+    .theme-gradient-action,
+    .theme-section-title
+  )::after {
+    display: none;
+  }
+
+  .theme-pattern,
+  .theme-accent-word {
+    background-image: none;
+  }
+}
+
+/*
+ * Reduced motion keeps the colour changes and the flash, which only fade, and removes everything
+ * that travels or changes size: the sheen, the press and release, the card landing, the check pop
+ * and the ring (WCAG 2.3.3 counts size changes as motion).
+ */
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .theme-hero-ornament,
+    .theme-hero-ornament *,
+    .theme-wiggle-icon,
+    .theme-package-card,
+    .theme-select-check,
+    .theme-select-ring
+  ),
+  .theme-gradient-action::after {
+    animation: none !important;
+  }
+
+  .theme-gradient-action,
+  .theme-package-card {
+    transition: none !important;
+    translate: none !important;
+    scale: none !important;
+  }
+}

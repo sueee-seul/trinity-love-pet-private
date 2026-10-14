@@ -1,0 +1,120 @@
+/*
+ * Strawberry Cream decorations: a sunny scrapbook.
+ *
+ * Paw and heart confetti on the page, a stitched edge inside key cards, washi tape on the
+ * package cards, a bow on the Signature card, polaroid photos, a honey wave under one hero
+ * word, a paw on the section breaks and a wiggle on the promise icons. The sticker button edge
+ * that presses down is now shared by every decorated theme (decor-press.css).
+ * Shared positioning and the accessibility guards are in decor-base.css.
+ */
+
+html[data-theme='strawberry'] .theme-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140' width='140' height='140'%3E%3Cg fill='%23c46b86' fill-opacity='.15'%3E%3Cellipse cx='26' cy='34' rx='7' ry='6'/%3E%3Ccircle cx='17' cy='25' r='2.8'/%3E%3Ccircle cx='23' cy='21' r='2.8'/%3E%3Ccircle cx='30' cy='21' r='2.8'/%3E%3Ccircle cx='36' cy='25' r='2.8'/%3E%3C/g%3E%3Cg fill='%23e9b04f' fill-opacity='.26'%3E%3Cpath d='M100 104l-7-7a4 4 0 0 1 7-5 4 4 0 0 1 7 5z'/%3E%3Ccircle cx='108' cy='30' r='2.5'/%3E%3Ccircle cx='40' cy='104' r='2'/%3E%3C/g%3E%3Ccircle cx='72' cy='66' r='3' fill='%238fcfb4' fill-opacity='.32'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/* A stitched edge just inside every key card. */
+html[data-theme='strawberry'] .theme-key-card::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1.5px dashed rgb(163 62 93 / 0.38);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* A strip of washi tape across the top of each package, a different colour on each of three. */
+html[data-theme='strawberry'] .theme-package-card::before {
+  content: '';
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 84px;
+  height: 22px;
+  translate: -50% 0;
+  rotate: -3deg;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(240 185 74 / 0.8) 0 7px,
+    rgb(255 241 210 / 0.85) 7px 14px
+  );
+  box-shadow: 0 1px 2px rgb(80 55 51 / 0.14);
+  pointer-events: none;
+}
+
+html[data-theme='strawberry'] .theme-package-card:nth-child(3n + 2)::before {
+  rotate: 2.5deg;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(143 207 180 / 0.8) 0 7px,
+    rgb(232 247 240 / 0.85) 7px 14px
+  );
+}
+
+html[data-theme='strawberry'] .theme-package-card:nth-child(3n)::before {
+  rotate: -1.5deg;
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgb(232 160 182 / 0.78) 0 7px,
+    rgb(255 236 240 / 0.85) 7px 14px
+  );
+}
+
+html[data-theme='strawberry'] .theme-signature-badge {
+  border: 1.5px solid #e7b8c4;
+  background-color: #fffcf8;
+  color: #a33e5d;
+}
+
+/* Polaroids: a white border, a deeper bottom edge, and a slight tilt that alternates. */
+html[data-theme='strawberry'] .theme-photo-frame {
+  padding: 10px 10px 34px;
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-shadow: 0 14px 28px -16px rgb(80 55 51 / 0.5);
+  rotate: -1.5deg;
+}
+
+html[data-theme='strawberry'] :nth-child(even) > .theme-photo-frame {
+  rotate: 1.5deg;
+}
+
+html[data-theme='strawberry'] .theme-photo-frame img {
+  border-radius: 3px;
+}
+
+html[data-theme='strawberry'] .theme-accent-word {
+  padding-bottom: 0.1em;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 8' width='20' height='8'%3E%3Cpath d='M0 5 Q5 1 10 5 T20 5' fill='none' stroke='%23F0B94A' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-position: left bottom;
+  background-repeat: repeat-x;
+  background-size: 0.36em 0.15em;
+  box-decoration-break: clone;
+}
+
+html[data-theme='strawberry'] .theme-divider {
+  display: block;
+  background-image: linear-gradient(90deg, transparent, #e8c5c0 18%, #e8c5c0 82%, transparent);
+  background-size: 100% 1px;
+}
+
+html[data-theme='strawberry'] .theme-divider-mark {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cg fill='%23a33e5d' fill-opacity='.85'%3E%3Cellipse cx='7' cy='7' rx='2' ry='3'/%3E%3Cellipse cx='17' cy='7' rx='2' ry='3'/%3E%3Cellipse cx='3.5' cy='12' rx='1.5' ry='2.5'/%3E%3Cellipse cx='20.5' cy='12' rx='1.5' ry='2.5'/%3E%3Cpath d='M6 18c0-3 4-7 6-7s6 4 6 7c0 4-4 2-6 2s-6 2-6-2Z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+html[data-theme='strawberry'] .theme-wiggle-host:hover .theme-wiggle-icon {
+  animation: theme-wiggle 0.6s ease;
+}
+
+@keyframes theme-wiggle {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  25% {
+    rotate: -9deg;
+  }
+  60% {
+    rotate: 7deg;
+  }
+}

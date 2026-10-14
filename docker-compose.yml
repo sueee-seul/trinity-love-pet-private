@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tropical-love-pet-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tropical_love_pet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      # 5433 on the host, not 5432: a native Postgres install (e.g. Windows'
+      # PostgreSQL service) commonly already owns 5432, and Docker Desktop's
+      # port-forwarding can silently route connections to it instead of this
+      # container, causing confusing "password authentication failed" errors
+      # even though this container's credentials are correct.
+      - '5433:5432'
+    volumes:
+      - tropical-love-pet-data:/var/lib/postgresql/data
+      # neon.sql is the canonical schema: a pg_dump of the live Neon database,
+      # and the same file the postgres API test preflight validates against.
+      # It carries no seed data: this container starts empty, exactly like a
+      # fresh Neon branch.
+      - ./Backend/database/neon.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+
+volumes:
+  tropical-love-pet-data:

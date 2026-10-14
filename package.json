@@ -1,0 +1,44 @@
+{
+  "name": "tropical-love-pet",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev:backend": "npm run dev --prefix Backend",
+    "dev:frontend": "npm run dev --prefix Frontend",
+    "dev:speech": "node scripts/run-speech-service.mjs",
+    "dev": "npm run dev:backend & npm run dev:frontend & npm run dev:speech",
+    "dev:self": "node --env-file-if-exists=.env.local --env-file=Backend/.env scripts/run-dev-self.mjs",
+    "test:e2e:parent-feedback": "playwright test --config=playWright/playwright.config.ts playWright/parent-feedback.persistence.spec.ts",
+    "verify:alan-scope": "node scripts/verify-alan-scope.mjs",
+    "build": "npm run build --prefix Backend && npm run build --prefix Frontend",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d postgres",
+    "ci:frontend": "npm run lint --prefix Frontend && npx prettier --check Frontend && npm run build --prefix Frontend && npm run test --prefix Frontend -- --run",
+    "ci:backend": "npm run build --prefix Backend && npm run test:unit --prefix Backend",
+    "ci:api:postgres": "npm run test:api:postgres --prefix Backend",
+    "ci:quality": "npm run lint && npx prettier --check Frontend/src Backend/src Backend/scripts .eslintrc.json .lintstagedrc package.json Frontend/package.json Backend/package.json Backend/tsconfig.json Backend/vitest.postgres.config.ts .github/workflows/ci.yml docs/testing-guide.md",
+    "ci:local": "npm run ci:quality && npm run ci:frontend && npm run ci:backend && npm run ci:api:postgres",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "format": "prettier --write .",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/pg": "^8.23.1",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "husky": "^9.1.7",
+    "jscpd": "^5.0.16",
+    "lint-staged": "^17.3.0",
+    "pg": "^8.23.0",
+    "prettier": "^3.9.6"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0"
+  }
+}

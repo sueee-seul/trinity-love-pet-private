@@ -1,0 +1,80 @@
+/*
+ * The landing page's hero copy. From 768px the hero band (`.theme-hero-band` in
+ * index.css) is plain hero colour for the left part of the band, then the theme picture fades
+ * in, so the copy stops at that line and never sits on the animals. The band sets where the
+ * line is in `--theme-hero-solid`; the copy sits in the page's centred 80rem column, so the limit
+ * takes off the column's own left edge. The same rule as `.concierge-hero-copy` on /book.
+ */
+@media (min-width: 48rem) {
+  .landing-hero-copy {
+    max-width: calc(var(--theme-hero-solid) * 1vw - 1.5rem);
+  }
+}
+
+@media (min-width: 64rem) {
+  .landing-hero-copy {
+    max-width: calc(var(--theme-hero-solid) * 1vw - (100vw - min(100vw, 80rem)) / 2 - 2rem);
+  }
+}
+
+/*
+ * The lace under the hero band takes the band's own colour for its scallops, so it reads as the
+ * band's cut edge in every theme (see `.concierge-hero-edge` in concierge.css).
+ */
+.landing-hero-edge {
+  --brand-shell: var(--color-hero, var(--color-surface-cream));
+}
+
+html[data-theme] .landing-hero-edge {
+  --brand-shell-ink: var(--color-hero-ink, var(--brand-hero-ink));
+}
+
+/*
+ * The reading colours and forced colours leave SVG alone, so the decorative scallops go. The phone
+ * copy of the hero picture goes too: those modes remove the picture, which would leave an empty
+ * frame behind.
+ */
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  :is(.landing-hero-edge, .landing-hero-picture),
+html[data-a11y-theme='grayscale'] .landing-hero-picture {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  .landing-hero-edge,
+  .landing-hero-picture {
+    display: none;
+  }
+}
+
+/* Chinese has no case and reads worse spaced out, so small labels keep only a hint of tracking. */
+.landing-page:lang(zh) [class*='tracking-'] {
+  letter-spacing: 0.04em;
+}
+
+/* Anchor jumps glide, unless the visitor asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing-page) {
+    scroll-behavior: smooth;
+  }
+}
+
+/*
+ * From 1024px the header stays at the top. An anchor jump, or a keyboard user tabbing down the
+ * page, must never land under it (WCAG 2.4.11, technique C43), so the page scrolls with room for
+ * the bar: its 84px height and a little air.
+ */
+@media (min-width: 64rem) {
+  html:has(.landing-header) {
+    scroll-padding-top: 6rem;
+  }
+}
+
+/* The FAQ marker is drawn by the page, so the browser's own triangle is hidden. */
+.landing-faq summary {
+  list-style: none;
+}
+
+.landing-faq summary::-webkit-details-marker {
+  display: none;
+}

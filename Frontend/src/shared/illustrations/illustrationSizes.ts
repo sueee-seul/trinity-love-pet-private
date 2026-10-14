@@ -1,0 +1,21 @@
+// Generated from the exported files; dimensions reserve the actual image ratio.
+export const illustrationSizes = {
+  'daily-routine-overview': [1024, 1024],
+  'meals-and-water': [1360, 768],
+  'walk-and-activity': [1360, 768],
+  'supervised-play': [1360, 768],
+  'quiet-rest': [1360, 768],
+  'get-ready': [1360, 768],
+  grooming: [1360, 768],
+  welcome: [1360, 768],
+  assistant: [680, 590],
+  'booking-introduce': [673, 371],
+  'booking-choose': [673, 371],
+  'booking-submit': [673, 383],
+  'booking-arrive': [673, 383],
+  'cat-play': [665, 768],
+  'cat-rest': [665, 768],
+  'empty-pets': [445, 535],
+  'empty-stays': [460, 535],
+  'empty-care': [455, 535],
+} as const;

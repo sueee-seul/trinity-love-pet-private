@@ -1,0 +1,27 @@
+.maps-review-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  margin-top: 27px;
+}
+
+.maps-review-modal-cancel,
+.maps-review-modal-post {
+  height: 44px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.maps-review-modal-cancel {
+  width: 112px;
+  border: 1px solid #c8cbd0;
+  background: var(--maps-review-surface);
+  color: var(--maps-review-gold-dark);
+}
+
+.maps-review-modal-post {
+  width: 110px;
+  background: var(--maps-review-gold-dark);
+  color: #ffffff;
+}

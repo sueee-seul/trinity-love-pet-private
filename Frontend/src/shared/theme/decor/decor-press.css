@@ -1,0 +1,300 @@
+/*
+ * Press and impact feedback, shared by the six decorated themes. The minimal themes (Simple, Paper
+ * and Slate) keep their plain buttons, as the product owner decided in September 2026.
+ *
+ * Primary buttons (`.theme-gradient-action`) sit on a solid edge in a darker shade of their own
+ * action colour. Hover lifts the face and a sheen crosses it: the Maison Noir motion, now used by
+ * every decorated theme. A press drops the face onto the edge at once, squashes it a little and
+ * flashes it. The release springs it back past its rest height and settles, which is where the
+ * hit comes from. The timings follow Josh Comeau's 3D button: a near-instant press, a slower
+ * release (https://www.joshwcomeau.com/animation/3d-button/).
+ *
+ * Package cards on /book sink while pressed. Choosing one lands the card with a small bounce, pops
+ * its check and sends one ring out from its edge. The choice itself is still shown by the lasting
+ * border and the filled check; the motion only adds to it.
+ *
+ * Only `translate`, `scale` and `opacity` animate (decorGuards.test.ts), plus the button's edge,
+ * a small box-shadow on one element at a time. decor-base.css turns all of it off under reduced
+ * motion and removes the edge, the flash and the ring under the reading colours.
+ */
+
+html:is(
+  [data-theme='strawberry'],
+  [data-theme='milk-cream'],
+  [data-theme='garden'],
+  [data-theme='moonlight'],
+  [data-theme='royal'],
+  [data-theme='noir']
+) {
+  /* The press lands at once; the release takes its time and overshoots before it settles. */
+  --theme-press-in: 30ms;
+  --theme-press-out: 420ms;
+  --theme-press-spring: cubic-bezier(0.3, 0.7, 0.4, 1.5);
+}
+
+/* Primary buttons ---------------------------------------------------------------------------- */
+
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  .theme-gradient-action {
+  /* The darker end of the button's own gradient, darker still: Strawberry's berry button gets a
+     deep berry edge, Maison Noir's gold one a bronze edge. */
+  --theme-press-edge: color-mix(
+    in srgb,
+    var(--theme-action-to, var(--color-action-dark)) 72%,
+    #000
+  );
+  position: relative;
+  /* A stacking context, so the flash can sit between the fill and the label. */
+  isolation: isolate;
+  /* Keeps the sheen and the flash inside the button. The edge is the button's own shadow and is
+     not clipped by its own overflow. */
+  overflow: hidden;
+  box-shadow: 0 4px 0 var(--theme-press-edge);
+  transition-property: background-color, border-color, translate, scale, box-shadow;
+  transition-duration:
+    200ms, 200ms, var(--theme-press-out), var(--theme-press-out), var(--theme-press-out);
+  transition-timing-function:
+    ease-out, ease-out, var(--theme-press-spring), var(--theme-press-spring),
+    var(--theme-press-spring);
+}
+
+/* The flash: a white wash over the fill and under the label, only while the button is held. */
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  .theme-gradient-action::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background-color: rgb(255 255 255 / 0.28);
+  opacity: 0;
+  transition: opacity 260ms ease-out;
+  pointer-events: none;
+}
+
+/* The sheen: a band of light parked off the left edge until hover sends it across. */
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  .theme-gradient-action::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
+  translate: -130% 0;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html:is(
+      [data-theme='strawberry'],
+      [data-theme='milk-cream'],
+      [data-theme='garden'],
+      [data-theme='moonlight'],
+      [data-theme='royal'],
+      [data-theme='noir']
+    )
+    .theme-gradient-action:hover:not(:disabled, [aria-disabled='true']) {
+    translate: 0 -1px;
+    box-shadow: 0 5px 0 var(--theme-press-edge);
+  }
+
+  html:is(
+      [data-theme='strawberry'],
+      [data-theme='milk-cream'],
+      [data-theme='garden'],
+      [data-theme='moonlight'],
+      [data-theme='royal'],
+      [data-theme='noir']
+    )
+    .theme-gradient-action:hover:not(:disabled, [aria-disabled='true'])::after {
+    animation: theme-sheen 0.9s ease;
+  }
+}
+
+/* The press: the face drops 3px onto its edge, squashes to 97% and flashes. */
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  .theme-gradient-action:active:not(:disabled, [aria-disabled='true']) {
+  translate: 0 3px;
+  scale: 0.97;
+  box-shadow: 0 1px 0 var(--theme-press-edge);
+  transition-duration:
+    200ms, 200ms, var(--theme-press-in), var(--theme-press-in), var(--theme-press-in);
+  transition-timing-function: ease-out;
+}
+
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  .theme-gradient-action:active:not(:disabled, [aria-disabled='true'])::before {
+  opacity: 1;
+  transition-duration: var(--theme-press-in);
+}
+
+@keyframes theme-sheen {
+  from {
+    translate: -130% 0;
+  }
+  to {
+    translate: 260% 0;
+  }
+}
+
+/* Package cards on /book --------------------------------------------------------------------- */
+
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  label.theme-package-card {
+  transition-property: border-color, box-shadow, translate, scale;
+  transition-duration: 200ms, 200ms, var(--theme-press-out), var(--theme-press-out);
+  transition-timing-function:
+    ease-out, ease-out, var(--theme-press-spring), var(--theme-press-spring);
+}
+
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  label.theme-package-card:active {
+  translate: 0 2px;
+  scale: 0.985;
+  transition-duration: 200ms, 200ms, var(--theme-press-in), var(--theme-press-in);
+  transition-timing-function: ease-out;
+}
+
+/* Choosing a card: it lands with a bounce, its check pops and one ring leaves its edge. */
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  label.theme-package-card:has(input:checked) {
+  animation: theme-card-land 380ms var(--theme-press-spring);
+}
+
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  label.theme-package-card:has(input:checked)
+  .theme-select-check {
+  animation: theme-check-pop 340ms var(--theme-press-spring);
+}
+
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  .theme-select-ring {
+  display: block;
+  position: absolute;
+  inset: -1px;
+  border: 2px solid var(--color-action-dark);
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
+
+html:is(
+    [data-theme='strawberry'],
+    [data-theme='milk-cream'],
+    [data-theme='garden'],
+    [data-theme='moonlight'],
+    [data-theme='royal'],
+    [data-theme='noir']
+  )
+  label.theme-package-card:has(input:checked)
+  .theme-select-ring {
+  animation: theme-ring-pulse 520ms ease-out;
+}
+
+@keyframes theme-card-land {
+  0% {
+    scale: 0.985;
+  }
+  45% {
+    scale: 1.015;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+/* Never from zero: a check growing out of nothing reads as appearing, not as being pressed. */
+@keyframes theme-check-pop {
+  0% {
+    scale: 0.6;
+  }
+  60% {
+    scale: 1.2;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+@keyframes theme-ring-pulse {
+  0% {
+    opacity: 0.6;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 1.05;
+  }
+}

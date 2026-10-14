@@ -1,0 +1,35 @@
+/*
+ * Theme faces, chosen by the product owner in September 2026.
+ *
+ * - Strawberry Cream sets its body text in Nunito instead of Times New Roman. It is the theme
+ *   customers start in, so most visitors see Nunito body text.
+ * - Mint Secret Garden sets its headings in Fraunces.
+ * - Maison Noir sets its headings in Cormorant Garamond.
+ *
+ * Headings across the product use `font-agbalumo` (and `.type-title`, which applies it), so a
+ * theme changes the heading face by pointing that token at another stack. The Wagstay wordmark
+ * uses `font-logo`, which no theme touches, so the logo stays Agbalumo everywhere.
+ *
+ * Every stack named here is declared in index.css and ends with a Chinese serif, so Chinese text
+ * never falls back to Microsoft YaHei (fontStacks.test.ts checks both).
+ */
+
+html[data-theme='strawberry'] {
+  --font-body: var(--font-nunito);
+}
+
+html[data-theme='garden'] {
+  --font-agbalumo: var(--font-fraunces);
+}
+
+html[data-theme='noir'] {
+  --font-agbalumo: var(--font-cormorant);
+}
+
+/*
+ * Agbalumo has one weight, so headings set `font-normal`. Cormorant Garamond is a light display
+ * face and needs its semibold to hold up at heading sizes.
+ */
+html[data-theme='noir'] .font-agbalumo {
+  font-weight: 600;
+}

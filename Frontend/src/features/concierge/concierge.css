@@ -1,0 +1,83 @@
+/*
+ * The concierge page's one piece of choreography: packages rise into place, one after another,
+ * when the quote is ready. Everything else on the page is still. Guests who ask for reduced motion
+ * get the packages immediately, with no movement at all.
+ */
+@keyframes concierge-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .concierge-rise {
+    animation: concierge-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: var(--concierge-rise-delay, 0ms);
+  }
+}
+
+/*
+ * Wide tracking suits the English uppercase labels; Chinese has no case and reads worse spaced
+ * out, so labels keep only a hint of it when the page is in Chinese.
+ */
+.concierge-page:lang(zh) [class*='tracking-'] {
+  letter-spacing: 0.04em;
+}
+
+/*
+ * The copy on the /book hero band. From 768px the band (`.theme-hero-band` in
+ * index.css) is plain hero colour for the left part of the band, then the picture fades in,
+ * so the copy stops at that line and never sits on the animals. The band sets where the line is in
+ * `--theme-hero-solid` (a plain number, 45 for 45%), and the copy inherits it, so moving the line
+ * in index.css moves this limit with it. The band is full width but the copy sits in the page's
+ * centred 80rem column, so the limit takes off the column's own left edge: the margin either side
+ * of the column, then its gutter (px-6, then px-8 from 1024px). Below 768px the band veils the
+ * whole picture and the copy uses the full width.
+ */
+@media (min-width: 48rem) {
+  .concierge-hero-copy {
+    max-width: calc(var(--theme-hero-solid) * 1vw - 1.5rem);
+  }
+}
+
+@media (min-width: 64rem) {
+  .concierge-hero-copy {
+    max-width: calc(var(--theme-hero-solid) * 1vw - (100vw - min(100vw, 80rem)) / 2 - 2rem);
+  }
+}
+
+/*
+ * The lace under the /book hero band. ThemeLaceEdge fills its scallops with the shell colour, and
+ * the default palette has no shell, so the fill would fall back to a deeper apricot than the band.
+ * Pointing the shell at the band's own colour makes the scallops read as the band's cut edge in
+ * every theme: Royal's emerald ends in emerald scallops with a gold line on its tan page, with no
+ * gradient between them. The default palette keeps the lace's own warm line; a theme draws the
+ * line in the band's ink, as its top bar does.
+ */
+.concierge-hero-edge {
+  --brand-shell: var(--color-hero, var(--color-surface-cream));
+}
+
+html[data-theme] .concierge-hero-edge {
+  --brand-shell-ink: var(--color-hero-ink, var(--brand-hero-ink));
+}
+
+/*
+ * The reading colours flatten every surface to one colour but leave SVG alone, so the scallops
+ * would keep the theme colour on the reading background. They are decoration, so they go.
+ */
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  .concierge-hero-edge {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  .concierge-hero-edge {
+    display: none;
+  }
+}

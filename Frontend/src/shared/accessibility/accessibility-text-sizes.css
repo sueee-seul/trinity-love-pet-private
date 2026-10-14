@@ -1,0 +1,117 @@
+/*
+ * GENERATED FILE. Do not hand-edit.
+ * Regenerate with: node scripts/generate-a11y-text-sizes.mjs
+ *
+ * Scales the one-off `text-[Npx]` classes with the accessibility text-size control. The number
+ * is part of the class name, so no token can reach it, but a rule on that same class can.
+ *
+ * Scoped to the app: #root plus any [data-a11y-surface], which is how a portalled dialog
+ * stays in scope. The toolbar itself carries neither, so it keeps its own size, and the
+ * scaled attribute means nothing changes until a visitor asks for larger text.
+ *
+ * 24 rules over 231 call sites.
+ */
+
+@media (width >= 40rem) {
+  html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .sm\:text-\[10px\] {
+    font-size: calc(10px * var(--a11y-font-scale, 1));
+  }
+}
+
+@media (width >= 40rem) {
+  html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .sm\:text-\[19px\] {
+    font-size: calc(19px * var(--a11y-font-scale, 1));
+  }
+}
+
+@media (width >= 40rem) {
+  html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .sm\:text-\[28px\] {
+    font-size: calc(28px * var(--a11y-font-scale, 1));
+  }
+}
+
+@media (width >= 40rem) {
+  html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .sm\:text-\[8px\] {
+    font-size: calc(8px * var(--a11y-font-scale, 1));
+  }
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[10px\] {
+  font-size: calc(10px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[11px\] {
+  font-size: calc(11px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[12\.5px\] {
+  font-size: calc(12.5px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[12px\] {
+  font-size: calc(12px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[13\.5px\] {
+  font-size: calc(13.5px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[13px\] {
+  font-size: calc(13px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[14px\] {
+  font-size: calc(14px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[15px\] {
+  font-size: calc(15px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[16px\] {
+  font-size: calc(16px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[17px\] {
+  font-size: calc(17px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[18px\] {
+  font-size: calc(18px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[20px\] {
+  font-size: calc(20px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[21px\] {
+  font-size: calc(21px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[22px\] {
+  font-size: calc(22px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[24px\] {
+  font-size: calc(24px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[26px\] {
+  font-size: calc(26px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[52px\] {
+  font-size: calc(52px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[7px\] {
+  font-size: calc(7px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[8px\] {
+  font-size: calc(8px * var(--a11y-font-scale, 1));
+}
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) .text-\[9px\] {
+  font-size: calc(9px * var(--a11y-font-scale, 1));
+}

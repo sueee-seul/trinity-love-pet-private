@@ -1,0 +1,180 @@
+/*
+ * Global overrides driven by the accessibility toolbar.
+ *
+ * These rules are deliberately broad and use `!important`. The application carries ~200 hard-coded
+ * `text-[Npx]` sizes and ~380 literal hex colours, so redefining Tailwind theme tokens would leave
+ * most of the interface unchanged.
+ *
+ * Every selector is scoped to `:is(#root, [data-a11y-surface])` - the application, not the whole
+ * document. The toolbar, launcher and ruler render through a portal onto `body` and carry no such
+ * marker, so the controls stay readable whatever the visitor has switched on.
+ *
+ * `[data-a11y-surface]` exists because dialogs portal onto `body` too, for stacking reasons, and
+ * `#root` alone would let a dialog slip out of the reading colours and the text size along with
+ * the toolbar. It marks "this is application content that happens to live outside `#root`".
+ */
+
+/* Text size ----------------------------------------------------------------- */
+
+/*
+ * Type scales, the layout does not.
+ *
+ * An earlier version scaled `zoom` on `#root`, which enlarged everything - padding, cards, the
+ * grid - so the page stayed the same shape and simply ran out of room, breaking the top bar.
+ * Redefining the size tokens instead grows the words and leaves the structure where it was,
+ * which is what a reading aid should do.
+ *
+ * Three groups have to move together, because the product sizes type three different ways:
+ * this project's own `--text-*` tokens, Tailwind's built-in scale, and the ~200 one-off
+ * `text-[Npx]` classes. The last group lives in `accessibility-text-sizes.css`, generated from the
+ * source so it cannot drift.
+ */
+
+html[data-a11y-scaled='true'] :is(#root, [data-a11y-surface]) {
+  --text-display: calc(clamp(27px, 4vw, 34px) * var(--a11y-font-scale, 1));
+  --text-card-title: calc(clamp(17px, 3vw, 21px) * var(--a11y-font-scale, 1));
+  --text-brand-title: calc(40px * var(--a11y-font-scale, 1));
+  --text-body: calc(15px * var(--a11y-font-scale, 1));
+  --text-meta: calc(12.5px * var(--a11y-font-scale, 1));
+  --text-eyebrow: calc(9.5px * var(--a11y-font-scale, 1));
+  --text-btn: calc(13.5px * var(--a11y-font-scale, 1));
+
+  /* Tailwind's own scale, for the places that use `text-sm` and friends. */
+  --text-xs: calc(0.75rem * var(--a11y-font-scale, 1));
+  --text-sm: calc(0.875rem * var(--a11y-font-scale, 1));
+  --text-base: calc(1rem * var(--a11y-font-scale, 1));
+  --text-lg: calc(1.125rem * var(--a11y-font-scale, 1));
+  --text-xl: calc(1.25rem * var(--a11y-font-scale, 1));
+  --text-2xl: calc(1.5rem * var(--a11y-font-scale, 1));
+  --text-3xl: calc(1.875rem * var(--a11y-font-scale, 1));
+  --text-4xl: calc(2.25rem * var(--a11y-font-scale, 1));
+  --text-5xl: calc(3rem * var(--a11y-font-scale, 1));
+}
+
+/* The pet parent pages set their own, larger scale (index.css), so they are scaled here too. */
+html[data-a11y-scaled='true'] .parent-type-scale {
+  --text-display: calc(clamp(28px, 3.6vw, 36px) * var(--a11y-font-scale, 1));
+  --text-card-title: calc(clamp(18px, 2.2vw, 22px) * var(--a11y-font-scale, 1));
+  --text-body: calc(16px * var(--a11y-font-scale, 1));
+  --text-meta: calc(14px * var(--a11y-font-scale, 1));
+  --text-eyebrow: calc(12px * var(--a11y-font-scale, 1));
+  --text-btn: calc(15px * var(--a11y-font-scale, 1));
+}
+
+/*
+ * Larger type needs somewhere to go. Long labels are allowed to wrap and containers to grow, so a
+ * row reflows instead of the text being clipped by a height that was set for the small size.
+ */
+html[data-a11y-scaled='true']
+  :is(#root, [data-a11y-surface])
+  :is(h1, h2, h3, h4, p, a, span, button, li, td, th) {
+  overflow-wrap: break-word;
+}
+
+/* Toolbar offset ------------------------------------------------------------ */
+
+html[data-a11y-bar='open'] body {
+  padding-top: var(--a11y-bar-height, 0px);
+}
+
+/* Sticky headers sit below the toolbar rather than underneath it. */
+html[data-a11y-bar='open'] :is(#root, [data-a11y-surface]) .sticky {
+  top: var(--a11y-bar-height, 0px);
+}
+
+/* Letter and line spacing --------------------------------------------------- */
+
+html[data-a11y-spacing='relaxed'] :is(#root, [data-a11y-surface]),
+html[data-a11y-spacing='relaxed'] :is(#root, [data-a11y-surface]) * {
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.18em !important;
+  line-height: 1.9 !important;
+}
+
+/* Contrast themes ----------------------------------------------------------- */
+
+html[data-a11y-theme='dark'] {
+  color-scheme: dark;
+  --a11y-bg: #0d0d0d;
+  --a11y-fg: #ffffff;
+  --a11y-border: #9a9a9a;
+}
+
+html[data-a11y-theme='light'] {
+  color-scheme: light;
+  --a11y-bg: #ffffff;
+  --a11y-fg: #000000;
+  --a11y-border: #000000;
+}
+
+html[data-a11y-theme='yellow'] {
+  color-scheme: dark;
+  --a11y-bg: #000000;
+  --a11y-fg: #ffff00;
+  --a11y-border: #ffff00;
+}
+
+/*
+ * No theme picture under any reading colour, greyscale included.
+ *
+ * `themeStore` writes the picture URL onto `<html>` as an inline style. An `!important` rule in a
+ * stylesheet beats an inline value that is not important, so this sets the property to `none`
+ * whatever theme is set, and every class that paints it paints nothing. That also reaches places
+ * the flattening rule below does not: greyscale, which has no flattening rule, and the theme
+ * preview in the portalled toolbar panel, which sits outside `#root`.
+ */
+html:is(
+  [data-a11y-theme='dark'],
+  [data-a11y-theme='light'],
+  [data-a11y-theme='yellow'],
+  [data-a11y-theme='grayscale']
+) {
+  --theme-page-image: none !important;
+}
+
+/*
+ * No theme picture in forced colours (a Windows contrast theme) either. The system takes over text
+ * and surface colours but keeps a background that holds a url() image, so the picture and the
+ * hero band's gradient would stay under text drawn in a colour the page no longer controls. The
+ * /book lace goes the same way in concierge.css.
+ */
+@media (forced-colors: active) {
+  html {
+    --theme-page-image: none !important;
+  }
+}
+
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow']) body {
+  background-color: var(--a11y-bg) !important;
+}
+
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  :is(#root, [data-a11y-surface]),
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  :is(#root, [data-a11y-surface])
+  *:not(img):not(video):not(canvas):not(svg):not(svg *) {
+  background-color: var(--a11y-bg) !important;
+  background-image: none !important;
+  color: var(--a11y-fg) !important;
+  border-color: var(--a11y-border) !important;
+}
+
+/*
+ * Flattening every surface to one colour also flattens the cues that say "this is a control".
+ * An outline on interactive elements and an underline on links put those cues back.
+ */
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  :is(#root, [data-a11y-surface])
+  :is(button, [role='button'], input, select, textarea) {
+  outline: 1px solid var(--a11y-border) !important;
+}
+
+html:is([data-a11y-theme='dark'], [data-a11y-theme='light'], [data-a11y-theme='yellow'])
+  :is(#root, [data-a11y-surface])
+  a {
+  text-decoration: underline !important;
+}
+
+html[data-a11y-theme='grayscale'] :is(#root, [data-a11y-surface]) {
+  filter: grayscale(1);
+}

@@ -1,0 +1,202 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: 'true'
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # ---------------------------------------------------------
+  # Job 0: Quality Gate
+  # ---------------------------------------------------------
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Run Quality Checks
+        run: npm run ci:quality
+
+  # ---------------------------------------------------------
+  # Job 1: Frontend CI
+  # ---------------------------------------------------------
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check for Frontend changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'Frontend/**'
+              - '.github/workflows/ci.yml'
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: 'Frontend/package-lock.json'
+
+      - name: Install Frontend Dependencies
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: Frontend
+        run: npm ci
+
+      - name: Security Audit (Frontend)
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: Frontend
+        run: npm audit --audit-level=high || true
+
+      - name: Check Formatting (Prettier)
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: Frontend
+        run: npx prettier --check .
+
+      - name: Lint Code (oxlint)
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: Frontend
+        run: npm run lint
+
+      - name: Type Check (TypeScript)
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: Frontend
+        run: npx tsc --noEmit
+
+      - name: Unit Tests (Vitest)
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: Frontend
+        run: npm run test -- --run
+
+      - name: Build Verification (Vite)
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: Frontend
+        run: npm run build
+
+  # ---------------------------------------------------------
+  # Job 2: Backend CI
+  # ---------------------------------------------------------
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check for Backend changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'Backend/**'
+              - '.github/workflows/ci.yml'
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.backend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: 'Backend/package-lock.json'
+
+      - name: Install Backend Dependencies
+        if: steps.filter.outputs.backend == 'true'
+        working-directory: Backend
+        run: npm ci
+
+      - name: Security Audit (Backend)
+        if: steps.filter.outputs.backend == 'true'
+        working-directory: Backend
+        run: npm audit --audit-level=high || true
+
+      - name: Type Check & Build (TypeScript)
+        if: steps.filter.outputs.backend == 'true'
+        working-directory: Backend
+        run: npm run build
+
+      - name: Unit Tests (Vitest - Pass if Empty)
+        if: steps.filter.outputs.backend == 'true'
+        working-directory: Backend
+        run: npm run test:unit
+
+  # ---------------------------------------------------------
+  # Job 3: Neon PostgreSQL API Read-back CI
+  # ---------------------------------------------------------
+  neon-postgres-api-ci:
+    name: Neon PostgreSQL API Read-back CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check for Backend changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'Backend/**'
+              - '.github/workflows/ci.yml'
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.backend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: 'Backend/package-lock.json'
+
+      - name: Install Backend Dependencies
+        if: steps.filter.outputs.backend == 'true'
+        working-directory: Backend
+        run: npm ci
+
+      - name: Require Neon test database secrets
+        if: steps.filter.outputs.backend == 'true'
+        env:
+          TEST_DATABASE_URL: ${{ secrets.NEON_TEST_DATABASE_URL }}
+        run: |
+          if [ -z "$TEST_DATABASE_URL" ]; then
+            echo "NEON_TEST_DATABASE_URL is required"
+            exit 1
+          fi
+
+      - name: PostgreSQL API Read-back Tests against Neon
+        if: steps.filter.outputs.backend == 'true'
+        working-directory: .
+        env:
+          TEST_DATABASE_URL: ${{ secrets.NEON_TEST_DATABASE_URL }}
+        run: npm run ci:api:postgres

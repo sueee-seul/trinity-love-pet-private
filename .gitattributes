@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+# Keep test code tracked and runnable, but collapse it by default in GitHub PR diffs.
+**/__tests__/** linguist-generated
+**/*.test.* linguist-generated
+**/*.spec.* linguist-generated
+
+# Keep committed review media tracked, but collapse it by default in GitHub PR diffs.
+Backend/storage/google-reviews/** linguist-generated
+Frontend/public/maps-review/** linguist-generated

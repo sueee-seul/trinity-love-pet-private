@@ -1,0 +1,249 @@
+/*
+ * GENERATED FILE. Do not hand-edit.
+ * Regenerate with: node scripts/generate-brand-theme-palettes.mjs
+ *
+ * Source of truth: src/shared/theme/palettes.ts. It is TypeScript so that every theme is forced
+ * to carry a complete palette, and so the contrast test can assert against the same values.
+ *
+ * The mapping from these `--brand-*` values onto the project semantic tokens lives in
+ * brand-themes.css. color-scheme is set here directly, because only the property itself makes
+ * the browser draw native controls dark on a dark palette.
+ *
+ * 8 palettes.
+ */
+
+html[data-theme='plain-light'] {
+  --brand-bg: #f6f4f1;
+  --brand-surface: #ffffff;
+  --brand-soft: #eceae6;
+  --brand-ink: #24211e;
+  --brand-muted: #57524b;
+  --brand-accent: #6b5138;
+  --brand-on-accent: #ffffff;
+  --brand-border: #968b78;
+  --brand-hero: #efece7;
+  --brand-hero-ink: #24211e;
+  --brand-shell: #efece7;
+  --brand-shell-ink: #24211e;
+  --brand-success: #2f5c3a;
+  --brand-danger: #9a2f2f;
+  --brand-shadow: 0 1px 2px #1a17140f;
+  --brand-action: #24211e;
+  --brand-on-action: #ffffff;
+  --brand-shadow-tint: #24211e;
+  color-scheme: light;
+}
+
+html[data-theme='plain-dark'] {
+  --brand-bg: #17191c;
+  --brand-surface: #21242a;
+  --brand-soft: #2c3037;
+  --brand-ink: #f2f3f5;
+  --brand-muted: #b5bac2;
+  --brand-accent: #d8c7a8;
+  --brand-on-accent: #23201b;
+  --brand-border: #686f7c;
+  --brand-hero: #1d2025;
+  --brand-hero-ink: #f2f3f5;
+  --brand-shell: #1d2025;
+  --brand-shell-ink: #f2f3f5;
+  --brand-success: #9ed3ad;
+  --brand-danger: #f2a3a3;
+  --brand-shadow: 0 2px 8px #00000059;
+  --brand-action: #d8c7a8;
+  --brand-on-action: #23201b;
+  --brand-shadow-tint: #000000;
+  color-scheme: dark;
+}
+
+html[data-theme='strawberry'] {
+  --brand-bg: #fff7ef;
+  --brand-surface: #fffcf8;
+  --brand-soft: #f8e6e7;
+  --brand-ink: #503733;
+  --brand-muted: #785b57;
+  --brand-accent: #a33e5d;
+  --brand-on-accent: #ffffff;
+  --brand-border: #c27b76;
+  --brand-hero: #fbf2e5;
+  --brand-hero-ink: #503733;
+  --brand-shell: #fbf2e5;
+  --brand-shell-ink: #503733;
+  --brand-success: #386047;
+  --brand-danger: #a02f42;
+  --brand-shadow: 0 6px 0 #eddbd1, 0 16px 32px #6842390a;
+  --brand-action: #503733;
+  --brand-on-action: #fffcf8;
+  --brand-shadow-tint: #503733;
+  color-scheme: light;
+  --brand-hero-from: #fdf3e8;
+  --brand-hero-to: #fdf0ea;
+  --brand-shell-from: #fdf3e8;
+  --brand-shell-to: #fbe4e2;
+  --brand-action-from: #b4486d;
+  --brand-action-to: #8a3050;
+  --brand-card-from: #fffcf8;
+  --brand-card-to: #fdefed;
+  --brand-feature-from: #fff5f3;
+  --brand-feature-to: #fbdde3;
+}
+
+html[data-theme='milk-cream'] {
+  --brand-bg: #fff7ef;
+  --brand-surface: #fffcf8;
+  --brand-soft: #f5ead8;
+  --brand-ink: #503733;
+  --brand-muted: #785b57;
+  --brand-accent: #86621d;
+  --brand-on-accent: #ffffff;
+  --brand-border: #a8844a;
+  --brand-hero: #fbf2e5;
+  --brand-hero-ink: #503733;
+  --brand-shell: #fbf2e5;
+  --brand-shell-ink: #503733;
+  --brand-success: #386047;
+  --brand-danger: #a02f42;
+  --brand-shadow: 0 6px 0 #ecdfc7, 0 16px 32px #6842390a;
+  --brand-action: #503733;
+  --brand-on-action: #fffcf8;
+  --brand-shadow-tint: #503733;
+  color-scheme: light;
+  --brand-hero-from: #fbf2e5;
+  --brand-hero-to: #f7e3c6;
+  --brand-shell-from: #fbf2e5;
+  --brand-shell-to: #f9ead3;
+  --brand-action-from: #6b4a44;
+  --brand-action-to: #3e2a27;
+  --brand-card-from: #fffcf8;
+  --brand-card-to: #fbf3e6;
+  --brand-feature-from: #fffaf1;
+  --brand-feature-to: #f6e6cc;
+}
+
+html[data-theme='moonlight'] {
+  --brand-bg: #14182b;
+  --brand-surface: #22283f;
+  --brand-soft: #303750;
+  --brand-ink: #f3effd;
+  --brand-muted: #bec3dc;
+  --brand-accent: #ccbbfa;
+  --brand-on-accent: #292139;
+  --brand-border: #687399;
+  --brand-hero: #1d2544;
+  --brand-hero-ink: #f3effd;
+  --brand-shell: #1d2544;
+  --brand-shell-ink: #f3effd;
+  --brand-success: #a2d5b4;
+  --brand-danger: #ffadb8;
+  --brand-shadow: 0 12px 30px #070b192e;
+  --brand-action: #ccbbfa;
+  --brand-on-action: #292139;
+  --brand-shadow-tint: #000000;
+  color-scheme: dark;
+  --brand-hero-from: #1b2240;
+  --brand-hero-to: #34305f;
+  --brand-shell-from: #1b2240;
+  --brand-shell-to: #262a55;
+  --brand-action-from: #e2d8ff;
+  --brand-action-to: #ab9cf0;
+  --brand-card-from: #262d48;
+  --brand-card-to: #20263c;
+  --brand-feature-from: #2c2f58;
+  --brand-feature-to: #3a3266;
+}
+
+html[data-theme='garden'] {
+  --brand-bg: #eff5e9;
+  --brand-surface: #fcfdf6;
+  --brand-soft: #e1ecd9;
+  --brand-ink: #2e493b;
+  --brand-muted: #57705e;
+  --brand-accent: #3c644c;
+  --brand-on-accent: #ffffff;
+  --brand-border: #739364;
+  --brand-hero: #eaf0dd;
+  --brand-hero-ink: #263f32;
+  --brand-shell: #eaf0dd;
+  --brand-shell-ink: #2e493b;
+  --brand-success: #356644;
+  --brand-danger: #a53340;
+  --brand-shadow: 0 6px 0 #d1ddc8, 0 16px 30px #2d47320a;
+  --brand-action: #2e493b;
+  --brand-on-action: #fcfdf6;
+  --brand-shadow-tint: #2e493b;
+  color-scheme: light;
+  --brand-hero-from: #edf3e3;
+  --brand-hero-to: #d8e8e4;
+  --brand-shell-from: #edf3e3;
+  --brand-shell-to: #e0ecdf;
+  --brand-action-from: #4b7a5d;
+  --brand-action-to: #2e493b;
+  --brand-card-from: #fcfdf6;
+  --brand-card-to: #eef5ec;
+  --brand-feature-from: #f4f9ef;
+  --brand-feature-to: #e4f0ea;
+}
+
+html[data-theme='royal'] {
+  --brand-bg: #ede0c4;
+  --brand-surface: #f8f0df;
+  --brand-soft: #e6d6b4;
+  --brand-ink: #3d3528;
+  --brand-muted: #6e624c;
+  --brand-accent: #715520;
+  --brand-on-accent: #ffffff;
+  --brand-border: #947b48;
+  --brand-hero: #163b32;
+  --brand-hero-ink: #f8e7c2;
+  --brand-shell: #163b32;
+  --brand-shell-ink: #f8e7c2;
+  --brand-success: #365c42;
+  --brand-danger: #933448;
+  --brand-shadow: 0 12px 30px #020e0c36;
+  --brand-action: #3d3528;
+  --brand-on-action: #f8f0df;
+  --brand-shadow-tint: #3d3528;
+  color-scheme: light;
+  --brand-hero-from: #12322a;
+  --brand-hero-to: #1f5243;
+  --brand-shell-from: #12322a;
+  --brand-shell-to: #1c4a3e;
+  --brand-action-from: #5a4d38;
+  --brand-action-to: #2e2719;
+  --brand-card-from: #faf4e7;
+  --brand-card-to: #f1e4c8;
+  --brand-feature-from: #fbf5e8;
+  --brand-feature-to: #f0e2c2;
+}
+
+html[data-theme='noir'] {
+  --brand-bg: #110f10;
+  --brand-surface: #1a1718;
+  --brand-soft: #262122;
+  --brand-ink: #f5eee2;
+  --brand-muted: #b9ae9b;
+  --brand-accent: #d4b26a;
+  --brand-on-accent: #1a1408;
+  --brand-border: #7a6a4d;
+  --brand-hero: #0e0c0d;
+  --brand-hero-ink: #f5eee2;
+  --brand-shell: #0e0c0d;
+  --brand-shell-ink: #f0e2bf;
+  --brand-success: #9fd6b0;
+  --brand-danger: #ffa39a;
+  --brand-shadow: 0 24px 48px -24px #000000cc;
+  --brand-action: #d4b26a;
+  --brand-on-action: #1a1408;
+  --brand-shadow-tint: #000000;
+  color-scheme: dark;
+  --brand-hero-from: #0e0c0d;
+  --brand-hero-to: #1f1812;
+  --brand-shell-from: #0e0c0d;
+  --brand-shell-to: #1a1511;
+  --brand-action-from: #f3e2ae;
+  --brand-action-to: #a8803e;
+  --brand-card-from: #1d191a;
+  --brand-card-to: #151213;
+  --brand-feature-from: #221d17;
+  --brand-feature-to: #16120f;
+}

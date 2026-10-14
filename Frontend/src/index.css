@@ -1,0 +1,565 @@
+@import url('https://fonts.googleapis.com/css2?family=Agbalumo&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Freckle+Face&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Noto+Serif+SC:wght@400;700&family=Nunito:ital,wght@0,400..700;1,400..700&family=Cormorant+Garamond:ital,wght@0,500..700;1,500..700&display=swap');
+@import 'tailwindcss';
+@import './shared/theme/brand-theme-palettes.css';
+@import './shared/theme/brand-themes.css';
+@import './shared/theme/theme-gradients.css';
+@import './shared/theme/theme-fonts.css';
+@import './shared/theme/decor/decor-base.css';
+@import './shared/theme/decor/decor-strawberry.css';
+@import './shared/theme/decor/decor-garden.css';
+@import './shared/theme/decor/decor-noir.css';
+@import './shared/theme/decor/decor-royal.css';
+@import './shared/theme/decor/decor-moonlight.css';
+@import './shared/theme/decor/decor-milk-cream.css';
+@import './shared/theme/decor/decor-press.css';
+@import './shared/navigation/navigation.css';
+@import './shared/theme/brand-theme-legacy-colours.css';
+@import './shared/accessibility/accessibility.css';
+@import './shared/accessibility/accessibility-text-sizes.css';
+
+@theme {
+  --color-apricot-cream-50: #fdf5e8;
+  --color-apricot-cream-100: #fbebd0;
+  --color-apricot-cream-200: #f7d7a1;
+  --color-apricot-cream-300: #f3c472;
+  --color-apricot-cream-400: #efb043;
+  --color-apricot-cream-500: #eb9c14;
+  --color-apricot-cream-600: #bc7d10;
+  --color-apricot-cream-700: #8d5e0c;
+  --color-apricot-cream-800: #5e3e08;
+  --color-apricot-cream-900: #2f1f04;
+  --color-apricot-cream-950: #211603;
+
+  /* Theme tones derived from the raw Apricot Cream scale */
+  --color-theme-sun: var(--color-apricot-cream-500);
+  --color-theme-honey: var(--color-apricot-cream-400);
+  --color-theme-apricot: var(--color-apricot-cream-300);
+  --color-theme-peach: var(--color-apricot-cream-200);
+  --color-theme-earth: var(--color-apricot-cream-700);
+  --color-theme-sun-hover: var(--color-apricot-cream-600);
+
+  /* Accessible foreground and control roles derived from the same palette */
+  --color-accent-foreground: var(--color-theme-earth);
+  /*
+   * Short alias for the accent text colour. About 30 links, rings and borders were written as
+   * text-accent, border-accent or focus:ring-accent before this token existed, so Tailwind
+   * dropped them and they showed no colour at all.
+   */
+  --color-accent: var(--color-accent-foreground);
+  --color-accent-foreground-hover: var(--color-apricot-cream-800);
+  --color-control-border: var(--color-apricot-cream-600);
+  --color-focus: var(--color-theme-earth);
+  --color-rating-filled: var(--color-theme-earth);
+  --color-rating-empty: var(--color-apricot-cream-600);
+
+  /* Semantic UI roles from the color board */
+  --color-surface-cream: #fff7ee;
+  --color-surface-deep: #fbebd8;
+  --color-surface-bubbles: #f9e2cb;
+  --color-surface-card: #ffffff;
+  --color-border-soft: #efe0cc;
+  --color-notice-primary: #3a2a20;
+  --color-notice-secondary: #5a4a3f;
+  --color-notice-muted: #7d6959;
+  --color-title: #ffffff;
+  --color-title-secondary: #e7cdb4;
+  --color-title-stroke: #000000;
+  --color-action-dark: #54402f;
+
+  /*
+   * Colours that sit on a filled control. They have their own tokens because a theme cannot reuse
+   * the surface or ink colour here: on a dark theme `action-dark` is a light accent, so the text
+   * on it has to be dark. See docs/brand-themes.md.
+   */
+  --color-on-action-dark: var(--color-surface-card);
+  /* The hover shade of a filled control. A theme mixes it from its own pair, see brand-themes.css. */
+  --color-action-dark-hover: var(--color-theme-earth);
+  --color-on-sun: var(--color-apricot-cream-950);
+
+  /* Mixed into shadows. Not the text colour, because light text makes a shadow glow. */
+  --color-shadow-tint: #3a2a20;
+
+  /*
+   * Input and select edges. `border-soft` is only 1.3:1 on white, which leaves a field with no
+   * visible end. This keeps its warm hue and clears 3:1 on both the card and the page colour.
+   */
+  --color-field-border: #a48a68;
+
+  /*
+   * The hero band at the top of a page (`.theme-hero-band` below) and the text that sits on it.
+   * Default keeps the band on the page cream with the body ink. A theme points both at its own
+   * hero pair in brand-themes.css, because some heroes are dark: Royal's is emerald.
+   */
+  --color-hero: var(--color-surface-cream);
+  --color-hero-ink: var(--color-notice-primary);
+
+  --color-status-warning: var(--color-theme-sun);
+  --color-status-success: #47703e;
+  --color-status-danger: #b3372a;
+  /*
+   * Soft status tints for chips, rows and notices: the status colour mixed into the card surface,
+   * so every theme gets them for free. Text on them stays the full status colour.
+   */
+  --color-status-warning-soft: color-mix(
+    in srgb,
+    var(--color-status-warning) 18%,
+    var(--color-surface-card)
+  );
+  --color-status-success-soft: color-mix(
+    in srgb,
+    var(--color-status-success) 14%,
+    var(--color-surface-card)
+  );
+  --color-status-danger-soft: color-mix(
+    in srgb,
+    var(--color-status-danger) 14%,
+    var(--color-surface-card)
+  );
+
+  /*
+   * None of the four families has Chinese glyphs. Without a Chinese face in the stack, Chinese text
+   * falls back to the system face (Microsoft YaHei on Windows), which the product does not use, so
+   * every stack ends with a Chinese serif. system-ui is gone from Agbalumo for the same reason.
+   */
+  --font-agbalumo:
+    'Agbalumo', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-fraunces:
+    'Fraunces', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-freckle:
+    'Freckle Face', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', cursive;
+  --font-inter:
+    'Inter', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', sans-serif;
+  /*
+   * The Wagstay wordmark. Always Agbalumo: a theme may change the heading face (theme-fonts.css
+   * points `--font-agbalumo` elsewhere), but never the logo.
+   */
+  --font-logo:
+    'Agbalumo', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  /*
+   * Faces only some themes use. Google Fonts serves each file only when a glyph is drawn in it, so
+   * declaring them in the one import costs a visitor who never picks these themes nothing more
+   * than a few lines of CSS.
+   */
+  --font-nunito:
+    'Nunito', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', sans-serif;
+  --font-cormorant:
+    'Cormorant Garamond', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun',
+    serif;
+  /* Text that names no font of its own. */
+  /*
+   * No bare "Times" here. On Windows it is only an alias, and Chrome resolved it to a different
+   * Chinese face for some characters, so a Chinese sentence came out in two weights.
+   */
+  --font-body:
+    'Times New Roman', 'Liberation Serif', 'Noto Serif', 'Noto Serif SC', 'Source Han Serif SC',
+    'Songti SC', 'STSong', 'SimSun', serif;
+
+  /* Unified Typography Scale matching UI Spec */
+  --text-display: clamp(27px, 4vw, 34px);
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.015em;
+
+  --text-card-title: clamp(17px, 3vw, 21px);
+  --text-card-title--line-height: 1.2;
+
+  --text-brand-title: 40px;
+  --text-brand-title--line-height: 1.1;
+
+  --text-body: 15px;
+  --text-body--line-height: 1.5;
+
+  --text-meta: 12.5px;
+  --text-meta--line-height: 1.5;
+
+  --text-eyebrow: 9.5px;
+  --text-eyebrow--line-height: 1.2;
+  --text-eyebrow--letter-spacing: 0.14em;
+
+  --text-btn: 13.5px;
+
+  --shadow-card: 0 4px 24px rgb(58 42 32 / 0.06);
+}
+
+/*
+ * The Default palette is light, so native controls are drawn light. The two dark themes set
+ * `dark` in brand-theme-palettes.css, which outranks this rule.
+ */
+:root {
+  color-scheme: light;
+}
+
+@layer components {
+  .type-title {
+    @apply font-agbalumo font-bold;
+  }
+
+  .type-title-secondary {
+    @apply font-agbalumo font-bold text-title-secondary;
+  }
+
+  .type-display {
+    @apply font-fraunces text-display font-bold text-notice-primary;
+  }
+
+  .type-card-title {
+    @apply font-agbalumo text-card-title font-bold text-notice-primary;
+  }
+
+  .type-numeral {
+    @apply font-fraunces font-bold text-notice-primary;
+  }
+
+  .type-normal {
+    @apply font-fraunces font-bold text-notice-primary;
+  }
+
+  .type-small {
+    @apply font-fraunces text-notice-primary;
+  }
+
+  .type-body {
+    @apply font-inter text-body text-notice-primary;
+  }
+
+  .type-meta {
+    @apply font-inter text-meta text-notice-muted;
+  }
+
+  .type-eyebrow {
+    @apply font-inter text-eyebrow font-bold uppercase;
+  }
+
+  .type-button {
+    @apply font-inter text-btn font-bold;
+  }
+
+  .type-other {
+    @apply font-freckle text-notice-secondary;
+  }
+
+  /*
+   * Theme pictures
+   * ----------------------------------------------------------------------------
+   * Every theme, Default included, has its own picture, and `themeStore` writes its URL into
+   * `--theme-page-image` on `<html>`. The reading colours and forced colours in accessibility.css
+   * force that property to `none`, so all three classes below go flat for a visitor using one.
+   * The `none` fallback only covers the moment before the theme store has run.
+   *
+   * They sit in this layer, so a Tailwind utility on the same element wins. Colour utilities such
+   * as `bg-surface-cream` only set `background-color` and leave the picture alone. A
+   * background-image utility (`bg-none`, `bg-linear-*`, `bg-[url(...)]`) would replace it, so
+   * never put one on an element that wears these classes.
+   *
+   * None of them uses `background-attachment: fixed`. A fixed background cannot be composited on
+   * the scrolling layer, so the browser repaints the whole picture on every scroll frame. With the
+   * old 1.4MB PNG that was the main cause of the stutter on the pet parent pages.
+   */
+
+  /*
+   * The theme's picture filling a box: the theme picker preview and the landing page's phone copy.
+   *
+   * `cover` rather than `100% 100%`, which stretched the picture to the box's aspect ratio.
+   */
+  .bg-theme-image {
+    background-image: var(--theme-page-image, none);
+    background-size: cover;
+    /* Every picture keeps its animals on the right, so a crop keeps that side. */
+    background-position: right center;
+    background-repeat: no-repeat;
+  }
+
+  /*
+   * The picture behind a whole portal page (pet parent and admin), one screen in size.
+   *
+   * As a background of the page it was scaled to the page's height, so a long page such as
+   * /parent/booking blew a 3:2 picture up several times over. Here it sits on a fixed layer the
+   * size of the window, so it stays one screen whatever the page's length and holds still while
+   * the page scrolls.
+   *
+   * A fixed element, not `background-attachment: fixed`: the browser composites an element on its
+   * own layer, while a fixed background is repainted on every scroll frame. The page is a stacking
+   * context (`isolation`), so the layer's `z-index: -1` puts it above the page colour and below
+   * everything else. Reading colours set `--theme-page-image` to `none`, which empties the layer.
+   */
+  .bg-theme-page {
+    isolation: isolate;
+  }
+
+  .bg-theme-page::before {
+    content: '';
+    position: fixed;
+    z-index: -1;
+    inset: 0;
+    background-image: var(--theme-page-image, none);
+    background-size: cover;
+    background-position: right center;
+    background-repeat: no-repeat;
+    pointer-events: none;
+  }
+
+  /*
+   * The hero band: a top band in the theme's hero colour with the theme's picture on the right.
+   *
+   * The hero colour runs as a gradient from `--theme-hero-from` on the left to `--theme-hero-to`
+   * on the right (theme-gradients.css). The stops fall back to the flat hero colour here, unlike
+   * everywhere else: a theme without stops (Paper, Slate) would otherwise make the whole
+   * `background-image` invalid.
+   *
+   * The picture is its own layer, `::before`, so it can fade into that gradient at both edges
+   * with a mask. As a background layer of the band it could not: a mask applies to a whole
+   * element, and the square edge of the picture showed as a line down the middle of the band.
+   *
+   * Text directly on the band uses `text-hero-ink`, or `text-hero-ink/80` for secondary text.
+   * `color` here only reaches text that sets no colour of its own; headings get one from the base
+   * layer, so they need the utility. Cards, panels and buttons inside keep their own tokens.
+   */
+  .theme-hero-band {
+    /* The phone veil strength. contrast.test.ts reads it and measures text on it. */
+    --theme-hero-veil: 93%;
+    /*
+     * Where the solid hero colour ends, as a share of the band's width (45 means 45%). A plain
+     * number so that band copy can turn it into a width: concierge.css stops the /book copy at
+     * `calc(var(--theme-hero-solid) * 1vw)`, and one value keeps the two from drifting apart.
+     * The picture never reaches left of this line.
+     */
+    --theme-hero-solid: 45;
+    --theme-hero-left: var(--theme-hero-from, var(--color-hero));
+    --theme-hero-right: var(--theme-hero-to, var(--color-hero));
+    position: relative;
+    background-color: var(--color-hero);
+    background-image: linear-gradient(to right, var(--theme-hero-left), var(--theme-hero-right));
+    color: var(--color-hero-ink);
+  }
+
+  /*
+   * The picture: the full height of the band, filling the space between the solid line and the
+   * window's right edge, so the copy on the left never sits on it. It runs to the edge because a
+   * picture stopped at the page column left a bare strip of hero colour on wide screens. `cover` fills that box
+   * whatever the band's height, and `right center` keeps the animals, which every picture has on
+   * its right. No `aspect-ratio`: with a width limit it shrinks the height to match, and the
+   * picture then stopped short of the band's bottom edge.
+   *
+   * The mask fades a third of the picture in from the left, so it melts into the hero gradient
+   * with no edge next to the copy.
+   *
+   * No `z-index` and no stacking context on the band: one would trap a popover opened inside the
+   * band under the page content that follows it. The band's children are positioned instead, which
+   * paints them over this layer by source order. Positioning utilities on a child still win.
+   */
+  .theme-hero-band::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: calc((100 - var(--theme-hero-solid)) * 1%);
+    background-image: var(--theme-page-image, none);
+    background-size: cover;
+    background-position: right center;
+    background-repeat: no-repeat;
+    mask-image: linear-gradient(to right, transparent, #000 33%);
+    pointer-events: none;
+  }
+
+  .theme-hero-band > * {
+    position: relative;
+  }
+
+  /*
+   * On a phone the copy runs the full width, so no side of the band is free of the picture. The
+   * picture covers the whole band under a hero colour veil that keeps text readable anywhere on
+   * it. 93% is the lowest whole step at which `text-hero-ink/80` clears 4.5:1 over a pure black or
+   * white pixel in every theme; at 88% Garden's secondary text fell to 4.13:1.
+   */
+  @media (width < 48rem) {
+    .theme-hero-band::before {
+      right: 0;
+      width: 100%;
+      background-image:
+        linear-gradient(
+          to right,
+          color-mix(in srgb, var(--theme-hero-left) var(--theme-hero-veil), transparent),
+          color-mix(in srgb, var(--theme-hero-right) var(--theme-hero-veil), transparent)
+        ),
+        var(--theme-page-image, none);
+      background-size:
+        100% 100%,
+        cover;
+      mask-image: none;
+    }
+  }
+
+  /*
+   * A whole-page picture for short pages such as sign-in, where the page is one card on a ground.
+   *
+   * The page colour, the picture anchored bottom right, and a veil in the page colour that
+   * thickens towards the top left. The card on top is opaque and is the only place for text;
+   * nothing is meant to be read on the ground itself.
+   *
+   * The picture is at most one viewport tall, so a page taller than the screen keeps it at its
+   * real size in the corner instead of blowing it up to the page height.
+   */
+  .theme-page-art {
+    background-color: var(--color-surface-cream);
+    background-image:
+      linear-gradient(
+        to bottom right,
+        var(--color-surface-cream) 15%,
+        color-mix(in srgb, var(--color-surface-cream) 55%, transparent) 50%,
+        transparent 80%
+      ),
+      var(--theme-page-image, none);
+    background-size:
+      100% 100%,
+      auto min(100%, 100vh);
+    background-position:
+      left top,
+      right bottom;
+    background-repeat: no-repeat;
+  }
+}
+
+@layer base {
+  /* Global Defaults */
+  body {
+    @apply font-body text-body text-notice-primary bg-surface-cream antialiased;
+  }
+
+  /* Headings */
+  h1,
+  h2 {
+    @apply font-fraunces text-display font-bold text-notice-primary;
+  }
+
+  /* Card Titles */
+  h3,
+  h4,
+  .card-title {
+    @apply font-agbalumo text-card-title font-bold text-notice-primary;
+  }
+
+  p {
+    @apply mb-4 font-body text-body font-normal;
+  }
+
+  small {
+    @apply font-body text-meta;
+  }
+
+  .meta-text {
+    @apply font-inter text-meta;
+  }
+
+  .eyebrow {
+    @apply font-inter text-eyebrow font-bold uppercase;
+  }
+
+  /* Links and Buttons */
+  button {
+    @apply font-body text-btn font-bold;
+  }
+
+  .btn {
+    @apply font-inter text-btn font-bold;
+  }
+
+  /*
+   * Agbalumo ships one weight. A bold request used to draw a fake bold that smeared the letters;
+   * with synthesis off, Latin text keeps the real face and a Chinese title still gets the real
+   * bold of its Chinese serif fallback.
+   */
+  :is(h3, h4, .card-title, .font-agbalumo, .type-title, .type-title-secondary, .type-card-title) {
+    font-synthesis-weight: none;
+  }
+}
+
+/*
+ * A Chinese title in the logo font is drawn by the Chinese serif, which looks thin at regular
+ * weight next to Agbalumo's heavy Latin letters. The serif has a real bold, and Agbalumo cannot
+ * fake one (synthesis is off in the base layer), so only the Chinese characters get heavier. It
+ * sits outside the layers so it wins over a font-normal utility on the same title.
+ */
+:lang(zh) .font-agbalumo {
+  font-weight: 700;
+}
+
+/*
+ * Staff console
+ * ------------------------------------------------------------------------------
+ * The console sets its spacing on each element, so the base paragraph margin would only add
+ * uneven gaps under notes and helper lines. Everything else (the type roles, the colours, the
+ * card radius) is the shared foundation; the console has no scale of its own.
+ */
+.admin-console {
+  /*
+   * The console's default face is the UI family. Staff read dense English tables and controls
+   * all day; the editorial default of the customer pages stays theirs.
+   */
+  --font-body: var(--font-inter);
+}
+
+.admin-console p {
+  margin-bottom: 0;
+}
+
+/*
+ * Pet parent type scale
+ * ------------------------------------------------------------------------------
+ * The pet parent pages (the portal and the booking page) are read by customers, often on a phone,
+ * so they use a larger fixed scale than the staff console: 16px body, 14px secondary text, 12px
+ * labels at the smallest, 18-22px card and section titles and 28-36px page titles. The staff
+ * console keeps the global sizes above. The accessibility text size control scales these too, in
+ * accessibility.css.
+ */
+.parent-type-scale {
+  --text-display: clamp(28px, 3.6vw, 36px);
+  --text-card-title: clamp(18px, 2.2vw, 22px);
+  --text-body: 16px;
+  --text-meta: 14px;
+  --text-eyebrow: 12px;
+  --text-btn: 15px;
+}
+
+/*
+ * Pet parent content panel and plates
+ * ------------------------------------------------------------------------------
+ * The panel that holds every inner pet parent page is frosted glass over the page picture. The
+ * product owner asked in September 2026 for the picture to show through; the panel had been 94%
+ * opaque, the floor for text straight on it over any picture (see "Text over a picture" in
+ * docs/brand-themes.md).
+ *
+ * Glass cannot promise contrast, so no text sits on the panel itself. Cards carry their own text,
+ * and what a page used to write straight onto the panel (a title, a status line) sits on a
+ * `.parent-plate`, an opaque card surface, where the palette's own contrast holds.
+ *
+ * Only the background colour is thinned, never `opacity`, which would fade the text with it. A
+ * visitor who asks the system for less transparency gets the panel opaque again.
+ *
+ * Unlayered, so no utility on the panel or the plate can thin them.
+ */
+.parent-content-panel {
+  /* contrast.test.ts reads this value: the panel is glass, and its text belongs on a plate. */
+  --parent-panel-cover: 62%;
+  background-color: color-mix(in srgb, var(--color-white) var(--parent-panel-cover), transparent);
+  border: 1px solid color-mix(in srgb, var(--color-white) 70%, transparent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .parent-content-panel {
+    --parent-panel-cover: 100%;
+  }
+}
+
+.parent-plate {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 1.5rem;
+  background-color: var(--color-surface-card);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+
+@media (min-width: 40rem) {
+  .parent-plate {
+    padding: 1.5rem;
+  }
+}

@@ -1,0 +1,479 @@
+.maps-review-content {
+  padding-top: 41px;
+  padding-bottom: 64px;
+}
+
+.maps-review-controls {
+  position: relative;
+}
+
+.maps-review-controls__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.maps-review-page .maps-review-icon-button,
+.maps-review-page .maps-review-sort-button {
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: transparent;
+  color: var(--maps-review-copy);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.maps-review-icon-button {
+  width: 36px;
+  padding: 0;
+}
+
+.maps-review-page .maps-review-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.maps-review-page .maps-review-icon-button:hover,
+.maps-review-page .maps-review-sort-button:hover {
+  border-color: #c7c7c7;
+  background: var(--maps-review-track);
+  outline: none;
+}
+
+.maps-review-page .maps-review-icon-button:focus-visible,
+.maps-review-page .maps-review-sort-button:focus-visible,
+.maps-review-page .maps-review-sort-button--active {
+  border-color: #c7c7c7;
+  background: var(--maps-review-surface);
+  outline: none;
+}
+
+.maps-review-sort-button .maps-review-icon:first-child {
+  font-size: 18px;
+}
+
+.maps-review-sort-button .maps-review-icon:last-child {
+  margin-left: 1px;
+  font-size: 17px;
+}
+
+.maps-review-sort-button--active .maps-review-icon:first-child {
+  color: var(--maps-review-focus);
+}
+
+.maps-review-sort-control {
+  position: relative;
+}
+
+.maps-review-search-input {
+  display: flex;
+  flex: 0 0 264px;
+  align-items: center;
+  width: 264px;
+  height: 36px;
+  padding: 0 8px 0 14px;
+  border: 1px solid #c7c7c7;
+  border-radius: 8px;
+  background: var(--maps-review-surface);
+  color: var(--maps-review-copy);
+}
+
+.maps-review-search-input:focus-within {
+  padding: 0 7px 0 13px;
+  border: 2px solid var(--maps-review-focus);
+}
+
+.maps-review-search-input input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--maps-review-ink);
+  font-size: 16px;
+}
+
+.maps-review-search-input input::placeholder {
+  color: var(--maps-review-muted);
+}
+
+.maps-review-search-input__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--maps-review-copy);
+  cursor: pointer;
+}
+
+.maps-review-search-input__clear:hover,
+.maps-review-search-input__clear:focus-visible {
+  background: var(--maps-review-track);
+  outline: none;
+}
+
+.maps-review-search-input__clear .maps-review-icon {
+  font-size: 19px;
+}
+
+.maps-review-sort-menu {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 20;
+  min-width: 136px;
+  padding: 6px 0;
+  border: 1px solid var(--maps-review-border);
+  border-radius: 4px;
+  background: var(--maps-review-surface);
+  box-shadow: 0 2px 6px rgb(32 33 36 / 20%);
+}
+
+.maps-review-page .maps-review-sort-menu__item {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  padding: 0 16px;
+  border-radius: 0;
+  background: transparent;
+  color: var(--maps-review-copy);
+  font-size: 16px;
+  line-height: 32px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.maps-review-page .maps-review-sort-menu__item:hover,
+.maps-review-page .maps-review-sort-menu__item:focus-visible {
+  background: var(--maps-review-track);
+  outline: none;
+}
+
+.maps-review-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 21px;
+}
+
+.maps-review-topic {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--maps-review-border);
+  border-radius: 22px;
+  background: var(--maps-review-soft-surface);
+  color: var(--maps-review-copy);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.maps-review-topic .maps-review-icon {
+  font-size: 19px;
+}
+
+.maps-review-topic__count {
+  color: var(--maps-review-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.maps-review-topic--active {
+  border-color: var(--maps-review-gold-dark);
+  background: var(--maps-review-gold-dark);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.maps-review-topic--active .maps-review-icon,
+.maps-review-topic--active .maps-review-topic__count {
+  color: #ffffff;
+}
+
+.maps-review-list {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.maps-review-card {
+  display: grid;
+  grid-template-columns: 245px minmax(0, 1fr);
+  gap: 28px;
+  padding: 24px 24px 26px;
+  border: 1px solid #eceef1;
+  border-radius: 16px;
+  background: var(--maps-review-surface);
+  box-shadow: 0 3px 14px rgb(32 33 36 / 7%);
+}
+
+.maps-review-card--with-response {
+  min-height: 340px;
+}
+
+.maps-review-card--compact {
+  min-height: 220px;
+}
+
+/* Marks the one review a shared link points at, so the recipient can tell which card they
+   were sent to after the page scrolls to it. */
+.maps-review-card--highlighted {
+  border-color: var(--maps-review-gold);
+  background: #fffbf2;
+  box-shadow: 0 3px 14px rgb(189 125 13 / 18%);
+}
+
+.maps-review-card__reviewer {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.maps-review-avatar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #668a2b;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.maps-review-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.maps-review-card__reviewer h3 {
+  margin: 3px 0 7px;
+  color: var(--maps-review-ink);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.maps-review-card__reviewer p {
+  margin: 0;
+  color: var(--maps-review-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.maps-review-card__content {
+  min-width: 0;
+}
+
+.maps-review-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.maps-review-card__meta time,
+.maps-review-response__heading time {
+  color: var(--maps-review-muted);
+  font-size: 13px;
+}
+
+.maps-review-more {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border-radius: 50%;
+}
+
+.maps-review-more .maps-review-icon {
+  font-size: 22px;
+}
+
+.maps-review-review-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.maps-review-review-menu__popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  min-width: 104px;
+  padding: 6px;
+  border: 1px solid var(--maps-review-border);
+  border-radius: 10px;
+  background: var(--maps-review-surface);
+  box-shadow: 0 8px 24px rgb(32 33 36 / 18%);
+}
+
+.maps-review-review-menu__item {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--maps-review-copy);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.maps-review-review-menu__item:hover,
+.maps-review-review-menu__item:focus-visible {
+  background: var(--maps-review-track);
+  outline: none;
+}
+
+.maps-review-review-menu__item:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.maps-review-delete-error {
+  margin: 12px 0 0;
+  color: #b3261e;
+  font-size: 13px;
+}
+
+.maps-review-card__text {
+  margin: 21px 0 0;
+  color: var(--maps-review-copy);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.maps-review-card__photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.maps-review-card__photo {
+  width: 144px;
+  height: 144px;
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+.maps-review-card__text--truncated {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.maps-review-show-more,
+.maps-review-like,
+.maps-review-share-action {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  color: var(--maps-review-copy);
+}
+
+.maps-review-show-more {
+  margin-top: 4px;
+  padding: 0;
+  color: var(--maps-review-gold-dark);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.maps-review-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 19px;
+}
+
+.maps-review-like,
+.maps-review-share-action {
+  gap: 8px;
+  padding: 0;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.maps-review-like .maps-review-icon,
+.maps-review-share-action .maps-review-icon {
+  font-size: 20px;
+}
+
+.maps-review-share-action:hover,
+.maps-review-share-action:focus-visible {
+  color: var(--maps-review-gold-dark);
+  outline: none;
+}
+
+.maps-review-like--active {
+  color: var(--maps-review-gold-dark);
+  font-weight: 600;
+}
+
+/* Material Symbols is a variable font, so the liked thumb needs the FILL axis rather
+   than only the filled glyph name. The other axes are repeated because setting
+   font-variation-settings replaces the whole list. */
+.maps-review-like--active .maps-review-icon {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+.maps-review-response {
+  margin-top: 22px;
+  padding: 7px 0 0 15px;
+  border-left: 2px solid var(--maps-review-gold);
+}
+
+.maps-review-response__heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.maps-review-response__heading strong {
+  color: var(--maps-review-copy);
+  font-size: 13px;
+}
+
+.maps-review-response p {
+  margin: 7px 0 0;
+  color: var(--maps-review-copy);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@media (max-width: 520px) {
+  .maps-review-controls__toolbar {
+    justify-content: stretch;
+  }
+
+  .maps-review-search-input {
+    flex: 1 1 auto;
+    width: auto;
+  }
+
+  .maps-review-sort-button {
+    flex: 0 0 auto;
+  }
+}

@@ -1,0 +1,112 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Local feedback audio uploads
+/Backend/storage/feedback/
+/Backend/storage/google-reviews/
+!/Backend/storage/google-reviews/
+/Backend/storage/google-reviews/*
+!/Backend/storage/google-reviews/character-set-02/
+!/Backend/storage/google-reviews/character-set-02/*
+# Local task photo uploads
+/Backend/storage/tasks/
+# Vaccination certificates pet parents upload (private: never commit or serve statically)
+/Backend/storage/vaccination-certificates/
+/output/playwright/
+
+# Local character-generator credentials
+/docs/character_generator/andrew-credentials.local.md
+/docs/character_generator/02-five-pet-parents-credentials.local.md
+/docs/character_generator/02-five-pet-parents-variables.local.sql
+/docs/feedback_agent
+# Node
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+.venv/
+.env/
+
+# Neon
+.neon
+
+# LLM Eval results
+*-results.json
+*-eval.json
+
+# Local-only review-agent evaluation and restore sources
+/Backend/src/evaluations/
+/Backend/src/data/fixtures/google-review-restore/
+/Backend/src/scripts/restore-google-review-fixtures.ts
+/Backend/src/repositories/google.review.fixture.restore*.ts
+/Backend/src/services/google.review.fixture.restore.service.ts
+/Backend/src/__tests__/google.review.fixture.restore*.test.ts
+/agents/google-review-investigation-agent/docs/Google reviews table.csv
+
+# Local customer-journey Evidence Check smoke artifacts
+/Backend/src/__tests__/api.postgres.customer-journey-evidence-smoke.test.ts
+/Backend/src/__tests__/customerJourneyEvidenceSmoke.test.ts
+/Backend/src/__tests__/support/customerJourneyEvidenceSmoke.api.ts
+/Backend/src/__tests__/support/customerJourneyEvidenceSmoke.http.ts
+/Backend/src/__tests__/support/customerJourneyEvidenceSmoke.ts
+
+# Agents
+.agents/
+
+# Kilo
+.kilo/
+
+jscpd-report/
+agents.md
+AGENTS.md
+output/pdf
+google-docs-trusted-read-*
+# Private local files: never commit
+temp.txt
+temp*.txt
+CLAUDE.md
+.claude/
+trinity_deleted_branches.txt
+# Private or local-only files: never commit (temp notes may hold connection strings and keys)
+/temp*
+/scratch.js
+/*.patch
+*.bak
+*.local.md
+agent.md
+AGENT.md
+skills-lock.json
+# AI assistant session notes
+docs/desktop-claude-continuation.md

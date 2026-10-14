@@ -1,0 +1,266 @@
+/*
+ * Brand themes from the "四季宠爱" design package (specs/design-tokens.json).
+ *
+ * The palettes themselves live in `palettes.ts` and are emitted into
+ * `brand-theme-palettes.css` as `--brand-*` values. This file is the other half: one mapping block
+ * that points the project's semantic tokens at those values, so a theme is a palette rather than a
+ * set of component overrides.
+ *
+ * Why this reaches the whole interface: Tailwind v4 emits `@theme` entries as real custom
+ * properties and keeps the `var()` chains intact, so redefining a ramp stop flows through every
+ * alias built on it: `--color-apricot-cream-700` carries `--color-theme-earth`,
+ * `--color-accent-foreground`, `--color-focus` and the rating colours with it. Roughly 1940 uses of
+ * the semantic utilities follow automatically, and `brand-theme-legacy-colours.css` picks up the
+ * places that still hard-code a colour.
+ *
+ * `html[data-theme]` outranks the `:root` block Tailwind emits, so source order does not matter.
+ * No attribute means the original apricot look, which stays the default.
+ */
+
+/* The mapping. One block for every theme; only the `--brand-*` values above differ. */
+html[data-theme] {
+  /*
+   * The ramp carries the aliases. Hover steps mix toward `--brand-ink` rather than black, so a
+   * dark theme's hover gets lighter instead of disappearing.
+   */
+  --color-apricot-cream-50: var(--brand-bg);
+  --color-apricot-cream-100: var(--brand-soft);
+  --color-apricot-cream-200: var(--brand-soft);
+  --color-apricot-cream-300: var(--brand-border);
+  --color-apricot-cream-400: color-mix(in srgb, var(--brand-accent) 70%, var(--brand-surface));
+  --color-apricot-cream-500: var(--brand-accent);
+  --color-apricot-cream-600: color-mix(in srgb, var(--brand-accent) 82%, var(--brand-ink));
+  --color-apricot-cream-700: var(--brand-accent);
+  --color-apricot-cream-800: color-mix(in srgb, var(--brand-accent) 64%, var(--brand-ink));
+  --color-apricot-cream-900: var(--brand-ink);
+  --color-apricot-cream-950: var(--brand-ink);
+
+  /*
+   * Surfaces. `surface-deep` stays on the light side of every palette because badges and table
+   * headers wear it with dark text; the chrome uses `--brand-shell` instead.
+   */
+  --color-surface-cream: var(--brand-bg);
+  --color-surface-card: var(--brand-surface);
+  --color-surface-deep: var(--brand-soft);
+  --color-surface-bubbles: var(--brand-soft);
+  --color-border-soft: var(--brand-border);
+
+  /* Text. `title` is the colour used on top of a filled accent, so it tracks `on-accent`. */
+  --color-notice-primary: var(--brand-ink);
+  --color-notice-secondary: var(--brand-muted);
+  --color-notice-muted: var(--brand-muted);
+  --color-title: var(--brand-on-accent);
+  --color-title-secondary: var(--brand-hero-ink);
+
+  /*
+   * The hero band at the top of a page (`.theme-hero-band` in index.css). Its own pair because
+   * the hero is not always a light colour: Royal's is emerald and Moonlight's is navy, so text on
+   * the band cannot use the body ink.
+   */
+  --color-hero: var(--brand-hero);
+  --color-hero-ink: var(--brand-hero-ink);
+
+  /*
+   * Gradient stops, read by `theme-gradients.css` and the hero band. No fallback on purpose: Paper
+   * and Slate have no stops, and a stop that is not defined makes every gradient built from it
+   * invalid, so those two themes keep their flat colours.
+   */
+  --theme-hero-from: var(--brand-hero-from);
+  --theme-hero-to: var(--brand-hero-to);
+  --theme-shell-from: var(--brand-shell-from);
+  --theme-shell-to: var(--brand-shell-to);
+  --theme-action-from: var(--brand-action-from);
+  --theme-action-to: var(--brand-action-to);
+  --theme-card-from: var(--brand-card-from);
+  --theme-card-to: var(--brand-card-to);
+  --theme-feature-from: var(--brand-feature-from);
+  --theme-feature-to: var(--brand-feature-to);
+
+  /*
+   * Filled controls. `action` is not `ink`: ink is near white on a dark theme, and a primary
+   * button must not turn into a white block. Each palette picks its own fill and the colour that
+   * sits on it, so the pair is measured together in contrast.test.ts.
+   */
+  --color-action-dark: var(--brand-action);
+  --color-on-action-dark: var(--brand-on-action);
+  /*
+   * theme-earth is the fill itself on a dark theme, so a hover to it showed no change. Mixing a
+   * little of the text colour in lightens a dark fill and darkens a light one.
+   */
+  --color-action-dark-hover: color-mix(in srgb, var(--brand-action) 84%, var(--brand-on-action));
+  --color-on-sun: var(--brand-on-accent);
+  --color-shadow-tint: var(--brand-shadow-tint);
+  --color-field-border: var(--brand-border);
+
+  /*
+   * Tailwind's own palette. The product reaches for it in ~350 places - `bg-white`,
+   * `text-stone-900`, `border-black/15`, `bg-amber-600` - and those are as unreachable by a
+   * semantic token as any hard-coded hex, because the class names carry the colour.
+   *
+   * They are reachable as *tokens* though: Tailwind v4 emits `--color-stone-900` and friends and
+   * every utility reads them through `var()`, including the opacity modifiers, which compile to
+   * `color-mix(… var(--color-black) 15%, transparent)`. So one override per shade covers every
+   * use of it at every opacity.
+   *
+   * Only the 5 families and 20 shades the product actually uses are listed; the rest of Tailwind's
+   * palette is left alone so an intentional colour stays intentional.
+   */
+  --color-white: var(--brand-surface);
+  --color-black: var(--brand-ink);
+
+  /* stone is this product's neutral scale: surfaces, then borders, then text. */
+  --color-stone-50: var(--brand-surface);
+  --color-stone-100: var(--brand-soft);
+  --color-stone-200: var(--brand-soft);
+  --color-stone-300: var(--brand-border);
+  --color-stone-400: var(--brand-muted);
+  --color-stone-500: var(--brand-muted);
+  --color-stone-600: var(--brand-muted);
+  --color-stone-700: var(--brand-ink);
+  --color-stone-900: var(--brand-ink);
+
+  /* amber is the brand gold. */
+  --color-amber-50: var(--brand-soft);
+  --color-amber-100: var(--brand-soft);
+  --color-amber-200: var(--brand-border);
+  --color-amber-600: var(--brand-accent);
+  --color-amber-700: color-mix(in srgb, var(--brand-accent) 82%, var(--brand-ink));
+  --color-amber-800: color-mix(in srgb, var(--brand-accent) 64%, var(--brand-ink));
+
+  --color-red-600: var(--brand-danger);
+
+  /* purple carries no meaning of its own here; it reads as a second accent. */
+  --color-purple-400: color-mix(in srgb, var(--brand-accent) 70%, var(--brand-surface));
+  --color-purple-500: var(--brand-accent);
+  --color-purple-700: color-mix(in srgb, var(--brand-accent) 78%, var(--brand-ink));
+
+  --color-status-success: var(--brand-success);
+  --color-status-danger: var(--brand-danger);
+}
+
+/* The package pairs each palette with its own card shadow. */
+html[data-theme] .shadow-card {
+  box-shadow: var(--brand-shadow);
+}
+
+/*
+ * The page picture needs no rule here. Every theme, Default included, writes its own picture into
+ * `--theme-page-image`, and the classes that paint it (`.bg-theme-image`, `.theme-hero-band`,
+ * `.theme-page-art`) live in index.css.
+ */
+
+/* Chrome --------------------------------------------------------------------- */
+
+/*
+ * The shell colour belongs to the top bar and nothing else.
+ *
+ * `header` on its own was wrong: this codebase uses `<header>` 21 times, and 20 of those are
+ * section headings inside page content - `<header class="mb-6">` above "My Stays", for one. Those
+ * were all being painted emerald with the page's dark body text left on top of them.
+ *
+ * `header.sticky` is the discriminator. The three real top bars (pet parent desktop, pet parent
+ * mobile, admin) are the only headers pinned to the top of the viewport; no section heading is.
+ */
+html[data-theme] header.sticky {
+  background-color: var(--brand-shell);
+}
+
+/*
+ * Text in the bar takes the shell ink - except inside a popover opened from it. The account menu
+ * and the notification panel are panels with their own background sitting on top of the bar, so
+ * their text has to stay on the palette's ordinary colours.
+ *
+ * The exclusion has to say "a surface *inside* the bar", not just "a surface". Two earlier
+ * attempts got this wrong in opposite directions: keying on roles missed the notification panel
+ * (`role="region"`, not `menu`), and keying on a bare surface class matched the bars themselves -
+ * the pet parent bar wears `bg-surface-deep` and the admin bar wears `bg-surface-card` - which
+ * excluded every link in them and left the navigation unreadable. A bar is not its own descendant,
+ * so scoping the ancestor to `header.sticky *` fixes both.
+ *
+ * A filled control in the bar, such as the Sign up link, keeps its own text colour. Its fill is
+ * `--color-action-dark`, and on Paper, Strawberry and Garden that is the shell ink itself, so the
+ * shell ink on it measured 1:1. The navigation pills (`.nav-pill`, shared/navigation) are left out
+ * for the same reason: the current one is filled with the shell ink and lettered in the shell.
+ * The bell's unread count (`.header-icon-count`) is a filled badge too, lettered in the surface
+ * colour on the danger fill; the shell ink on that fill was dark on dark.
+ */
+html[data-theme]
+  header.sticky
+  :is(a, p, span, h1, h2, h3, h4, button, li, strong, small):not(
+    header.sticky :is(.bg-surface-card, .bg-surface-cream, .bg-surface-deep, .bg-surface-bubbles) *
+  ):not(header.sticky :is([role='menu'], [role='dialog'], [role='listbox'], [role='region']) *):not(
+    .bg-action-dark,
+    .bg-action-dark *,
+    .nav-pill,
+    .header-icon-count
+  ) {
+  color: var(--brand-shell-ink);
+}
+
+html[data-theme]
+  header.sticky
+  :is(a, button):hover:not(
+    header.sticky :is(.bg-surface-card, .bg-surface-cream, .bg-surface-deep, .bg-surface-bubbles) *
+  ):not(header.sticky :is([role='menu'], [role='dialog'], [role='listbox'], [role='region']) *):not(
+    .bg-action-dark,
+    .bg-action-dark *,
+    .nav-pill,
+    .header-icon-count
+  ) {
+  color: color-mix(in srgb, var(--brand-shell-ink) 72%, var(--brand-accent));
+}
+
+/* A panel inside the bar sets its own ground, so it states its own text colour too. */
+html[data-theme]
+  header.sticky
+  :is(.bg-surface-card, .bg-surface-cream, .bg-surface-bubbles, [role='menu'], [role='region']) {
+  color: var(--brand-ink);
+}
+
+/*
+ * The current navigation item is a solid pill in every bar, drawn by shared/navigation/
+ * navigation.css. It replaced an underline in September 2026, when the product owner asked for
+ * one navigation style across the site with the current tab as a solid block.
+ */
+
+/* Translucent surfaces ------------------------------------------------------- */
+
+/*
+ * A translucent panel cannot promise contrast.
+ *
+ * The pet parent shell wraps every page in `bg-white/80 backdrop-blur-md`, floating it over the
+ * theme's illustration. At 80% over a pale photograph that reads fine; at 80% over Royal's dark
+ * emerald or Moonlight's night sky the panel turns muddy and the body text on it goes with it - no
+ * palette value can fix that, because what is behind the text is a photograph.
+ *
+ * So under a theme these surfaces become opaque. The measured palette contrast is then the contrast
+ * actually on screen, which is the whole point of the contrast test. The default apricot look keeps
+ * its glass: it floats over a pale photograph and was designed that way.
+ *
+ * Only the plain utility counts, so each class is matched at the start of the attribute or after
+ * a space. A bare substring match also caught `hover:bg-white/10` and `focus:bg-white/20`, which
+ * painted the hover colour all the time.
+ */
+html[data-theme]
+  :is(
+    [class^='bg-white/'],
+    [class*=' bg-white/'],
+    [class^='bg-surface-card/'],
+    [class*=' bg-surface-card/']
+  ) {
+  background-color: var(--brand-surface);
+}
+
+html[data-theme] :is([class^='bg-surface-cream/'], [class*=' bg-surface-cream/']) {
+  background-color: var(--brand-bg);
+}
+
+html[data-theme]
+  :is(
+    [class^='bg-surface-deep/'],
+    [class*=' bg-surface-deep/'],
+    [class^='bg-surface-bubbles/'],
+    [class*=' bg-surface-bubbles/']
+  ) {
+  background-color: var(--brand-soft);
+}

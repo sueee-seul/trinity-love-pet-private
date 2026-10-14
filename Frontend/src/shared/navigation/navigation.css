@@ -1,0 +1,169 @@
+/*
+ * Navigation pills, shared by the landing header and the signed-in bars (product owner, September
+ * 2026). The links sit in one rounded track and the current one is a solid pill.
+ *
+ * The pill is filled with the bar's own ink and lettered in the bar's colour, so it is the darkest
+ * thing on a light bar and the lightest on a dark one (Moonlight, Maison Noir, Slate, the emerald
+ * Le Petit Palais header). That also settles its contrast: the text on the pill is the bar's own
+ * text pair reversed, which the palette tests already hold above 4.5:1, and the pill against the
+ * bar is the same pair (WCAG 1.4.3 and 1.4.11).
+ *
+ * The current item is marked by `aria-current` (NavLink sets "page"; the landing scroll-spy sets
+ * "true"), so what a screen reader hears and what the eye sees can never disagree. The colour
+ * change is 150 ms and nothing slides: people switch sections often, and a moving header is the
+ * one NN/g advises against.
+ *
+ * Each bar names the colour pair it sits on:
+ *   .nav-pills--hero    the landing header, on the hero colours
+ *   .nav-pills--shell   the signed-in bars, on the shell colours
+ *   anything else       the card surface (the admin phone menu, the phone tab bar)
+ */
+
+@layer components {
+  .nav-pills,
+  .nav-tabbar {
+    --nav-pill-ink: var(--color-notice-primary);
+    --nav-pill-ground: var(--color-surface-card);
+  }
+
+  .nav-pills--hero {
+    --nav-pill-ink: var(--color-hero-ink);
+    --nav-pill-ground: var(--color-hero);
+  }
+
+  /* Simple has no shell pair of its own; its bars are the card and cream surfaces. */
+  html[data-theme] .nav-pills--shell {
+    --nav-pill-ink: var(--brand-shell-ink);
+    --nav-pill-ground: var(--brand-shell);
+  }
+
+  .nav-pills {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    max-width: 100%;
+    margin: 0;
+    padding: 0.25rem;
+    list-style: none;
+    border: 1px solid color-mix(in srgb, var(--nav-pill-ink) 14%, transparent);
+    border-radius: 9999px;
+    background-color: color-mix(in srgb, var(--nav-pill-ground) 55%, transparent);
+  }
+
+  /* A track too long for its bar scrolls inside itself; the cut-off pill says there is more. */
+  .nav-pills {
+    scrollbar-width: none;
+  }
+
+  /*
+   * Smaller pills for a bar with many links: the manager's seven fit a tablet this way. From
+   * 1280px there is room for the full size again.
+   */
+  .nav-pills--compact .nav-pill {
+    padding-inline: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  @media (width >= 80rem) {
+    .nav-pills--compact .nav-pill {
+      padding-inline: 1rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  /* A column of pills, for a menu that opens below the bar. */
+  .nav-pills--stacked {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    border-radius: 1.25rem;
+  }
+
+  .nav-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    /* Tight on the smallest phones, so the landing page's four links fit at 360px without a
+       scroll (NN/g: four or fewer links should all be visible). */
+    padding-inline: 0.5rem;
+    border-radius: 9999px;
+    color: var(--nav-pill-ink);
+    font-family: var(--font-inter);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background-color 150ms ease-out,
+      color 150ms ease-out;
+  }
+
+  .nav-pills--stacked .nav-pill {
+    justify-content: flex-start;
+    padding-inline: 1rem;
+  }
+
+  @media (width >= 24rem) {
+    .nav-pill {
+      padding-inline: 0.75rem;
+    }
+  }
+
+  @media (width >= 80rem) {
+    .nav-pill {
+      padding-inline: 1rem;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .nav-pill:hover {
+      background-color: color-mix(in srgb, var(--nav-pill-ink) 8%, transparent);
+    }
+  }
+
+  .nav-pill:focus-visible {
+    outline: 2px solid var(--nav-pill-ink);
+    outline-offset: 2px;
+  }
+
+  .nav-pill:is([aria-current='page'], [aria-current='true']) {
+    background-color: var(--nav-pill-ink);
+    color: var(--nav-pill-ground);
+  }
+
+  /* The phone tab bar: the current item's icon sits in a pill, the Material 3 way. */
+  .nav-tab {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.125rem;
+    color: var(--nav-pill-ink);
+    text-decoration: none;
+  }
+
+  .nav-tab-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 1.75rem;
+    border-radius: 9999px;
+    transition:
+      background-color 150ms ease-out,
+      color 150ms ease-out;
+  }
+
+  .nav-tab:is([aria-current='page'], [aria-current='true']) .nav-tab-indicator {
+    background-color: var(--nav-pill-ink);
+    color: var(--nav-pill-ground);
+  }
+
+  .nav-tab:focus-visible {
+    outline: 2px solid var(--nav-pill-ink);
+    outline-offset: -2px;
+  }
+}

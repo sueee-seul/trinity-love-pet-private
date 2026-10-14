@@ -1,0 +1,25 @@
+{
+  "minLines": 10,
+  "minTokens": 80,
+  "mode": "weak",
+  "formatsExts": {
+    "javascript": ["js", "jsx"],
+    "typescript": ["ts", "tsx"]
+  },
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/coverage/**",
+    "**/generated/**",
+    "**/test/**",
+    "**/__tests__/**",
+    "**/mock/**",
+    "**/*.test.*",
+    "**/*.spec.*"
+  ],
+  "reporters": ["console", "json"],
+  "output": "./jscpd-report",
+  "gitignore": true,
+  "threshold": 100,
+  "absolute": true
+}

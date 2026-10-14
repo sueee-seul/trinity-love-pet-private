@@ -1,0 +1,6 @@
+faster-whisper==1.2.1
+numpy
+# GPU only. CTranslate2 needs CUDA 12 cuBLAS and cuDNN 9; these wheels ship the libraries so no
+# system CUDA install is required. macOS has no CUDA, so they are skipped there.
+nvidia-cublas-cu12; platform_system != "Darwin"
+nvidia-cudnn-cu12==9.*; platform_system != "Darwin"
