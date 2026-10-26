@@ -1,6 +1,9 @@
-import type { ChargeSettlement } from '../contracts/booking.change.contract.js';
+import type {
+  ChargeSettlement,
+  StayChangeRequestDetails,
+} from '../contracts/booking.change.contract.js';
 import type { ParentBookingNotificationKind } from '../contracts/booking.notification.contract.js';
-import { newZealandCalendarDate } from '../common/utils/new-zealand-time.js';
+import { formatNewZealandDay, newZealandCalendarDate } from '../common/utils/new-zealand-time.js';
 import type { BookingNoticeSubject } from '../repositories/booking.notification.repository.js';
 import { REVIEW_REASON_WORDS, type ManagerReviewReason } from './booking.review-rules.js';
 import { STAY_STATUS_LABELS, refusalReasonFor } from './stay-status.js';
@@ -22,6 +25,9 @@ export const PARENT_NOTIFICATION_TITLES: Record<ParentBookingNotificationKind, s
   booking_approved: STAY_STATUS_LABELS.approved,
   booking_refused: STAY_STATUS_LABELS.refused,
   booking_back_in_review: 'Back in review',
+  booking_change_requested: 'Change requested',
+  booking_change_approved: 'Change approved',
+  booking_change_refused: 'Change not approved',
   booking_extended: 'Stay extended',
   booking_add_on_booked: 'Add-on booked',
   booking_times_changed: 'Time changed',
@@ -61,7 +67,7 @@ export const cancelledByParentBody = (
   const money =
     fee > 0
       ? `${formatNoticeMoney(fee)} was kept under the cancellation rules you agreed to; the rest goes back to your card.`
-      : 'Nothing was charged; anything held or paid goes back to your card.';
+      : 'Nothing was charged.';
   return `You cancelled ${joinPetNames(subject.petNames)}'s stay${stay} reference ${reference}. ${money}`;
 };
 
@@ -133,6 +139,8 @@ export const MANAGER_BOOKING_REQUEST_TITLE = 'New booking request';
 export const MANAGER_REVIEW_DUE_TITLE = 'Decision due soon';
 /** The bell title when a parent extended, shortened, added to or re-timed a stay under way. */
 export const MANAGER_STAY_CHANGED_TITLE = 'Stay changed by the parent';
+/** The bell title when a parent asks to change a stay under way. */
+export const MANAGER_CHANGE_REQUEST_TITLE = 'Change request';
 /** The bell title when a dose passed its hour with no tick (Scenario 11: flag it at once). */
 export const MANAGER_MEDICATION_OVERDUE_TITLE = 'Medication overdue';
 /** The bell title when something needs a person (an escalation with a suggested step). */
@@ -144,6 +152,7 @@ export const MANAGER_ON_THE_WAY_TITLE = 'Parent on the way';
 export const MANAGER_BOOKING_TITLES: Readonly<Record<string, string>> = {
   booking_review_due: MANAGER_REVIEW_DUE_TITLE,
   booking_changed_by_guest: MANAGER_STAY_CHANGED_TITLE,
+  booking_change_requested: MANAGER_CHANGE_REQUEST_TITLE,
   booking_medication_overdue: MANAGER_MEDICATION_OVERDUE_TITLE,
   booking_escalation: MANAGER_ESCALATION_TITLE,
   booking_parent_on_the_way: MANAGER_ON_THE_WAY_TITLE,
@@ -182,62 +191,54 @@ export const joinPetNames = (petNames: readonly string[]): string => {
   return `${names.slice(0, -1).join(', ')} and ${last}`;
 };
 
-/** A pet as it left checkout: confirmed when `reasons` is empty, otherwise waiting for a manager. */
+/** A pet as it left checkout. Every pet waits for a manager; `reasons` flag what to look at. */
 export interface PlacedPet {
   name: string;
   reasons: ManagerReviewReason[];
 }
 
-/** "Bella (takes medication)". */
+/** "Bella (takes medication)", or just "Bella" when nothing stands out. */
 const withReasons = (pet: PlacedPet): string =>
-  `${pet.name} (${pet.reasons.map((reason) => REVIEW_REASON_WORDS[reason]).join(', ')})`;
+  pet.reasons.length === 0
+    ? pet.name
+    : `${pet.name} (${pet.reasons.map((reason) => REVIEW_REASON_WORDS[reason]).join(', ')})`;
 
-/** Parent, on checkout, when every pet was confirmed at once. The boarding pass exists already. */
-export const bookingConfirmedBody = (subject: BookingNoticeSubject, reference: string): string => {
-  const dates = stayDatesOf(subject);
-  const stay = dates ? `, ${dates},` : '';
-  return (
-    `Your booking ${reference} for ${joinPetNames(subject.petNames)}${stay} is confirmed. ` +
-    'Your boarding pass is in My stays.'
-  );
-};
+/** Nothing is paid online: the parent pays at the desk once staff have seen the pet. */
+const PAY_AT_DESK = 'You pay at the desk on arrival, after a quick health check.';
 
 /**
- * Parent, on checkout, when a manager checks some stays first. It names each confirmed pet, and
- * each waiting pet with the reason, so the parent knows what is booked and what is not yet.
+ * Parent, on checkout. Nothing is booked yet: every pet waits for our manager, who approves or
+ * declines it. Starts the way the oldest received notices did ("We got your request PB-… for
+ * Max and Bella, …"), which booking.notification.facts.ts reads as every pet waiting.
  */
-export const requestReceivedBody = (
-  subject: BookingNoticeSubject,
-  reference: string,
-  pets: readonly PlacedPet[],
-): string => {
+export const requestReceivedBody = (subject: BookingNoticeSubject, reference: string): string => {
   const dates = stayDatesOf(subject);
   const stay = dates ? `, ${dates}` : '';
-  const confirmed = pets.filter((pet) => pet.reasons.length === 0).map((pet) => pet.name);
-  const waiting = pets.filter((pet) => pet.reasons.length > 0);
-  const sentences = [`We got your request ${reference}${stay}.`];
-  if (confirmed.length > 0) {
-    sentences.push(
-      `${joinPetNames(confirmed)} ${confirmed.length === 1 ? 'is' : 'are'} confirmed.`,
-    );
-  }
-  sentences.push(
-    `Our manager checks ${joinPetNames(waiting.map(withReasons))} before confirming. ` +
-      'We hold the full price on your card, and charge the confirmed pets once our manager has decided.',
+  return (
+    `We got your request ${reference} for ${joinPetNames(subject.petNames)}${stay}. ` +
+    'Nothing is booked yet: our manager will check it and let you know here once it is approved or declined. ' +
+    PAY_AT_DESK
   );
-  return sentences.join(' ');
 };
 
+/** "Thu 15 Oct at 10:00 am": when to bring the pet, in Auckland time. */
+const arrivalOf = (dropOffTime: Date): string =>
+  `${formatNewZealandDay(dropOffTime)} at ${timeOf(dropOffTime)}`;
+
 /**
- * Parent, when the manager confirms a stay that waited for them. The same word as a stay
- * confirmed at checkout, and the boarding pass exists from this moment.
+ * Parent, when the manager approves a stay. Says when to come and what happens at the desk; the
+ * boarding pass exists from this moment.
  */
 export const approvedBody = (subject: BookingNoticeSubject): string => {
   const dates = stayDatesOf(subject);
   const stay = dates ? `, ${dates},` : '';
+  const pets = joinPetNames(subject.petNames);
+  const arrival = subject.dropOffTime
+    ? ` Please bring ${pets} on ${arrivalOf(subject.dropOffTime)}.`
+    : '';
   return (
-    `${joinPetNames(subject.petNames)}'s stay${stay} is confirmed. ` +
-    'Your boarding pass is in My stays.'
+    `${pets}'s stay${stay} is approved.${arrival} ` +
+    'We do a quick health check at the desk, then you pay there. Your boarding pass is in My stays.'
   );
 };
 
@@ -267,7 +268,7 @@ export const datesChangedBody = (subject: BookingNoticeSubject): string => {
   const stay = dates ? ` to ${dates}` : '';
   return (
     `You moved ${joinPetNames(subject.petNames)}'s stay${stay}. ` +
-    'Our manager will review the new dates. Nothing is held on your card until they approve.'
+    'Our manager will review the new dates. Nothing is booked until they approve.'
   );
 };
 
@@ -285,15 +286,76 @@ export const managerDatesChangedBody = (
 };
 
 /**
- * Managers, on checkout, only for the stays they check first. The reasons say what to look at,
- * and the reference and dates find it on Bookings.
+ * Managers, on checkout, for every new request. The reasons say what to look at, and the
+ * reference and dates find it on Bookings.
  */
 export const managerRequestBody = (
   subject: BookingNoticeSubject,
   reference: string,
-  waiting: readonly PlacedPet[],
+  pets: readonly PlacedPet[],
 ): string => {
   const dates = stayDatesOf(subject);
   const stay = dates ? `, ${dates}` : '';
-  return `Please review ${joinPetNames(waiting.map(withReasons))}${stay}. Reference ${reference}.`;
+  return `Please review ${joinPetNames(pets.map(withReasons))}${stay}. Reference ${reference}.`;
 };
+
+// ----- Change requests while the pet is staying ---------------------------------------------------
+
+/** "4:00 pm" for a wall-clock "16:00". */
+const clockOf = (time: string): string => {
+  const [hour = 0, minute = 0] = time.split(':').map(Number);
+  const suffix = hour < 12 ? 'am' : 'pm';
+  return `${hour % 12 === 0 ? 12 : hour % 12}:${String(minute).padStart(2, '0')} ${suffix}`;
+};
+
+/**
+ * One line for a change request, for the parent, the managers and the chat:
+ * "extend Max's stay to 17 Oct 2026 ($55.00)", "Extra Playtime for Max on 15 Oct 2026 ($12.00)",
+ * "new times for Max: check-out 11:00 am".
+ */
+export const stayChangeSummary = (
+  details: StayChangeRequestDetails,
+  petNames: readonly string[],
+  amount: number | null,
+): string => {
+  const pets = joinPetNames(petNames);
+  const money = amount !== null && amount > 0 ? ` (${formatNoticeMoney(amount)})` : '';
+  switch (details.kind) {
+    case 'extend':
+      return `extend ${pets}'s stay to ${dayOf(details.endDate)}${money}`;
+    case 'add_on': {
+      const times = details.quantity > 1 ? ` x${details.quantity}` : '';
+      return `${details.serviceName}${times} for ${pets} on ${dayOf(details.date)}${money}`;
+    }
+    case 'times': {
+      const parts = [
+        details.dropOffTime ? `check-in ${clockOf(details.dropOffTime)}` : null,
+        details.pickUpTime ? `check-out ${clockOf(details.pickUpTime)}` : null,
+      ].filter((part): part is string => part !== null);
+      return `new times for ${pets}: ${parts.join(', ')}`;
+    }
+    case 'early_check_out':
+      return `pick ${pets} up early`;
+  }
+};
+
+/** Parent, when the request is saved: nothing changes until our manager approves it. */
+export const changeRequestedBody = (summary: string): string =>
+  `We got your request to ${summary}. Our manager will check it and let you know here. ` +
+  'Nothing changes until it is approved. Any amount is added to your bill, paid at the desk at pick-up.';
+
+/** Parent (chat), when our manager approved the request and the change was made. */
+export const changeApprovedBody = (summary: string): string =>
+  `Our manager approved your request to ${summary}. It is done, and the team has it on their list. ` +
+  'Any amount is added to your bill, paid at the desk at pick-up.';
+
+/** Parent, when our manager refused the request. The manager's reason is the parent's answer. */
+export const changeRefusedBody = (summary: string, reason: string): string =>
+  `We can't ${summary}. Reason: ${reason.trim()}`;
+
+/** Managers: a request to decide on Bookings. */
+export const managerChangeRequestBody = (
+  petNames: readonly string[],
+  summary: string,
+  reference: string,
+): string => `${joinPetNames(petNames)}: the parent asks to ${summary}. Reference ${reference}.`;

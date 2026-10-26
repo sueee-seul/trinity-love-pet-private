@@ -401,12 +401,12 @@ Key cards on customer pages (package tiers, the assistant card, the pet parent h
 
 ### 5.6 Date and time fields
 
-Do not use `<input type="date">`, `type="time"` or `type="datetime-local"`. The browser draws them in its own language, and the `lang` attribute does not change that. An English page in a Chinese Chrome shows "年/月/日".
+Do not use `<input type="date">`, `type="time"` or `type="datetime-local"`. The browser draws them in its own language, and the `lang` attribute does not change that. An English page in a Chinese Chrome shows the Chinese "year/month/day".
 
 Use the fields in `Frontend/src/shared/components/ui/date/` instead:
 
-- `DateField`: a button that opens a calendar (react-day-picker) in a native `<dialog>`. It shows "Mon 12 Oct 2026" in English and "2026年10月12日 周一" in Chinese. Weeks start on Monday. Days outside `min` and `max` cannot be picked. Set `yearPicker` for dates far from today, such as a birth date.
-- `TimeField`: a native `<select>` with our own labels, "9:00 am" or "上午9:00". A current value that is not on the step grid stays as an extra option.
+- `DateField`: a button that opens a calendar (react-day-picker) in a native `<dialog>`. It shows "Mon 12 Oct 2026" in English and year-month-day with the weekday in Chinese. Weeks start on Monday. Days outside `min` and `max` cannot be picked. Set `yearPicker` for dates far from today, such as a birth date.
+- `TimeField`: a native `<select>` with our own labels, "9:00 am", or with the Chinese word for morning first. A current value that is not on the step grid stays as an extra option.
 - `DateTimeField`: a `DateField` and a `TimeField` side by side, stacked on a phone.
 
 The rules:
@@ -441,7 +441,7 @@ GST, AI and kg may stay as they are. Staff pages under `/admin` are English only
 - **Staff notes.** Notes staff write on care tasks are free English. For a Chinese reader the live
   care request carries `lang=zh`, and the server adds a machine translation of each note
   (`Backend/src/services/care-note.translation.ts`, cached in memory, never failing the page). The
-  page shows it labelled "自动翻译", with the original below the card on tap, the way booking sites
+  page shows it labelled "Auto-translated" (in Chinese), with the original below the card on tap, the way booking sites
   show "Translated · Show original". A note that could not be translated says so in Chinese.
   Parent notices are said from the facts the server reads out of each sentence (`noticeWords.ts`).
   A quick reply is still sent in English, because the server matches it word for word. A word not

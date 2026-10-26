@@ -6,11 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { chooseDate } from '../../../../shared/components/ui/date/testing';
 import { ApiError } from '../../api/bookingApi';
 import {
-  bookAddOn,
-  changeStayTimes,
-  extendStay,
   fetchAddOnCatalogue,
   previewExtension,
+  requestAddOn,
+  requestExtension,
+  requestTimes,
 } from '../../api/stayChangesApi';
 import { bookedStay } from '../../components/stays/__tests__/stayFixtures';
 import type { PetStay } from '../../types/stays';
@@ -22,11 +22,28 @@ vi.mock('../../api/stayChangesApi', () => ({
   previewReschedule: vi.fn(),
   rescheduleStay: vi.fn(),
   previewExtension: vi.fn(),
-  extendStay: vi.fn(),
+  requestExtension: vi.fn(),
   fetchAddOnCatalogue: vi.fn(),
-  bookAddOn: vi.fn(),
-  changeStayTimes: vi.fn(),
+  requestAddOn: vi.fn(),
+  requestTimes: vi.fn(),
 }));
+
+/** What the server answers once a change is saved as a request for our manager. */
+const sentRequest = {
+  id: 'request-1',
+  bookingId: 'booking-1',
+  bookingPetId: null,
+  details: { kind: 'extend' as const, endDate: '2026-12-19' },
+  quotedAmount: 86,
+  status: 'pending' as const,
+  refusalReason: null,
+  summary: "extend Biscuit's stay to 19 Dec 2026 ($86.00)",
+  createdAt: '2026-12-12T22:00:00.000Z',
+  decidedAt: null,
+};
+
+const REQUEST_SENT =
+  'Request sent. Our manager will check it, and you will hear the answer in your notifications and in the chat. Nothing changes until it is approved.';
 
 /** 11:00 on Sun 13 Dec 2026 in Auckland: Biscuit's second day in, check-out due Tue 15 Dec 16:00. */
 const NOW = new Date('2026-12-12T22:00:00Z');
@@ -116,9 +133,9 @@ describe('changes while the pet is staying', () => {
     }
   });
 
-  it('prices the added nights first, then extends at that price and says what was charged', async () => {
+  it('prices the added nights first, then asks our manager at that price', async () => {
     vi.mocked(previewExtension).mockResolvedValue(extension);
-    vi.mocked(extendStay).mockResolvedValue({ ...extension, chargeId: 'charge-1' });
+    vi.mocked(requestExtension).mockResolvedValue(sentRequest);
     const user = renderStays([biscuit]);
 
     await user.click(screen.getByRole('button', { name: 'Extend the stay' }));
@@ -141,23 +158,21 @@ describe('changes while the pet is staying', () => {
     expect(summary).toHaveTextContent('This is charged to your saved card now.');
 
     await act(async () => {
-      await user.click(within(dialog).getByRole('button', { name: 'Extend and pay $86.00' }));
+      await user.click(within(dialog).getByRole('button', { name: 'Send request ($86.00)' }));
     });
 
-    expect(extendStay).toHaveBeenCalledWith('booking-1', {
+    expect(requestExtension).toHaveBeenCalledWith('booking-1', {
       endDate: '2026-12-19',
       expectedAmount: 86,
     });
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Extended to Sat 19 Dec. $86.00 was charged to your saved card.',
-    );
+    expect(screen.getByRole('status')).toHaveTextContent(REQUEST_SENT);
     expect(screen.queryByRole('dialog', { name: 'Extend the stay' })).not.toBeInTheDocument();
   });
 
-  it('extends a booking without a saved card and puts the nights on the bill for check-out', async () => {
+  it('says more nights are a request, added to the bill only if our manager approves', async () => {
     const toBill = { ...extension, settlement: 'desk' as const };
     vi.mocked(previewExtension).mockResolvedValue(toBill);
-    vi.mocked(extendStay).mockResolvedValue({ ...toBill, chargeId: 'charge-9' });
+    vi.mocked(requestExtension).mockResolvedValue(sentRequest);
     const user = renderStays([biscuit]);
 
     await user.click(screen.getByRole('button', { name: 'Extend the stay' }));
@@ -169,37 +184,23 @@ describe('changes while the pet is staying', () => {
     const summary = within(dialog).getByRole('status');
     expect(summary).toHaveTextContent('The added nights cost $86.00.');
     expect(summary).toHaveTextContent(
-      'This will be added to your bill. You pay it at the desk when you check out.',
+      'This is a request for our manager. If approved, it is added to your bill, paid at the desk when you check out.',
     );
     expect(summary).not.toHaveTextContent('charged to your saved card');
     await act(async () => {
-      await user.click(
-        within(dialog).getByRole('button', { name: 'Extend and add $86.00 to my bill' }),
-      );
+      await user.click(within(dialog).getByRole('button', { name: 'Send request ($86.00)' }));
     });
 
-    expect(extendStay).toHaveBeenCalledWith('booking-1', {
+    expect(requestExtension).toHaveBeenCalledWith('booking-1', {
       endDate: '2026-12-16',
       expectedAmount: 86,
     });
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Extended to Sat 19 Dec. $86.00 was added to your bill. You pay it at the desk when you check out.',
-    );
+    expect(screen.getByRole('status')).toHaveTextContent(REQUEST_SENT);
   });
 
-  it('loads the add-ons, names the service and total on the button, and books at that price', async () => {
+  it('loads the add-ons, names the service and total on the button, and asks at that price', async () => {
     vi.mocked(fetchAddOnCatalogue).mockResolvedValue(catalogue);
-    vi.mocked(bookAddOn).mockResolvedValue({
-      chargeId: 'charge-2',
-      bookingPetId: 'bp-biscuit',
-      petName: 'Biscuit',
-      serviceName: 'Outdoor Walk',
-      date: '2026-12-14',
-      quantity: 2,
-      amount: 30,
-      taskId: null,
-      settlement: 'card',
-    });
+    vi.mocked(requestAddOn).mockResolvedValue(sentRequest);
     const user = renderStays([biscuit]);
 
     await user.click(screen.getByRole('button', { name: 'Add a walk or playtime' }));
@@ -211,13 +212,13 @@ describe('changes while the pet is staying', () => {
 
     await user.selectOptions(within(dialog).getByLabelText('Day'), '2026-12-14');
     await user.selectOptions(within(dialog).getByLabelText('How many'), '2');
-    const confirm = within(dialog).getByRole('button', { name: 'Add 2 Outdoor Walk for $30.00' });
+    const confirm = within(dialog).getByRole('button', { name: 'Ask for 2 Outdoor Walk ($30.00)' });
     expect(dialog).toHaveTextContent('This is charged to your saved card now.');
 
     // A service priced for the stay is not counted.
     await user.click(within(dialog).getByRole('radio', { name: /Bath, \$40\.00 per stay/ }));
     expect(within(dialog).queryByLabelText('How many')).not.toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Add 1 Bath for $40.00' })).toBeEnabled();
+    expect(within(dialog).getByRole('button', { name: 'Ask for 1 Bath ($40.00)' })).toBeEnabled();
     await user.click(within(dialog).getByRole('radio', { name: /Outdoor Walk, \$15\.00 per day/ }));
     expect(dialog).toHaveTextContent('A 30 minute walk.');
     await user.selectOptions(within(dialog).getByLabelText('How many'), '2');
@@ -226,53 +227,39 @@ describe('changes while the pet is staying', () => {
       await user.click(confirm);
     });
 
-    expect(bookAddOn).toHaveBeenCalledWith('booking-1', 'bp-biscuit', {
+    expect(requestAddOn).toHaveBeenCalledWith('booking-1', 'bp-biscuit', {
       serviceId: 'svc-walk',
       date: '2026-12-14',
       quantity: 2,
       expectedAmount: 30,
     });
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Added 2 Outdoor Walk on Mon 14 Dec. $30.00 was charged to your saved card.',
-    );
+    expect(screen.getByRole('status')).toHaveTextContent(REQUEST_SENT);
   });
 
-  it('books an add-on without a saved card and says it is paid at the desk at check-out', async () => {
+  it('says an add-on is a request, paid at the desk at check-out if approved', async () => {
     vi.mocked(fetchAddOnCatalogue).mockResolvedValue({ ...catalogue, settlement: 'desk' });
-    vi.mocked(bookAddOn).mockResolvedValue({
-      chargeId: 'charge-3',
-      bookingPetId: 'bp-biscuit',
-      petName: 'Biscuit',
-      serviceName: 'Outdoor Walk',
-      date: '2026-12-13',
-      quantity: 1,
-      amount: 15,
-      taskId: null,
-      settlement: 'desk',
-    });
+    vi.mocked(requestAddOn).mockResolvedValue(sentRequest);
     const user = renderStays([biscuit]);
 
     await user.click(screen.getByRole('button', { name: 'Add a walk or playtime' }));
     const dialog = screen.getByRole('dialog', { name: 'Add a walk or playtime' });
     await within(dialog).findByRole('radio', { name: /Outdoor Walk/ });
     expect(dialog).toHaveTextContent(
-      'This will be added to your bill. You pay it at the desk when you check out.',
+      'This is a request for our manager. If approved, it is added to your bill, paid at the desk when you check out.',
     );
     expect(dialog).not.toHaveTextContent('This is charged to your saved card now.');
     await act(async () => {
       await user.click(
-        within(dialog).getByRole('button', { name: 'Add 1 Outdoor Walk for $15.00' }),
+        within(dialog).getByRole('button', { name: 'Ask for 1 Outdoor Walk ($15.00)' }),
       );
     });
 
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Added 1 Outdoor Walk on Sun 13 Dec. $15.00 was added to your bill. You pay it at the desk when you check out.',
-    );
+    expect(screen.getByRole('status')).toHaveTextContent(REQUEST_SENT);
   });
 
   it('charges nothing and shows the new price when an add-on moved while the dialog was open', async () => {
     vi.mocked(fetchAddOnCatalogue).mockResolvedValue(catalogue);
-    vi.mocked(bookAddOn).mockRejectedValueOnce(
+    vi.mocked(requestAddOn).mockRejectedValueOnce(
       new ApiError('The price has changed since you checked it.', 409, {
         error: { code: 'ADD_ON_PRICE_CHANGED', details: [{ amount: 18 }] },
       }),
@@ -284,11 +271,11 @@ describe('changes while the pet is staying', () => {
     await within(dialog).findByRole('radio', { name: /Outdoor Walk/ });
     await act(async () => {
       await user.click(
-        within(dialog).getByRole('button', { name: 'Add 1 Outdoor Walk for $15.00' }),
+        within(dialog).getByRole('button', { name: 'Ask for 1 Outdoor Walk ($15.00)' }),
       );
     });
 
-    expect(bookAddOn).toHaveBeenCalledWith('booking-1', 'bp-biscuit', {
+    expect(requestAddOn).toHaveBeenCalledWith('booking-1', 'bp-biscuit', {
       serviceId: 'svc-walk',
       date: '2026-12-13',
       quantity: 1,
@@ -298,22 +285,23 @@ describe('changes while the pet is staying', () => {
       'The amount changed while this was open, so nothing was charged.',
     );
     expect(
-      within(dialog).getByRole('button', { name: 'Add 1 Outdoor Walk for $18.00' }),
+      within(dialog).getByRole('button', { name: 'Ask for 1 Outdoor Walk ($18.00)' }),
     ).toBeEnabled();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
-  it('moves the check-out time only while the pet is in, and says the new times', async () => {
-    vi.mocked(changeStayTimes).mockResolvedValue({
-      dropOffAt: biscuit.dropOffAt,
-      pickUpAt: '2026-12-15T01:00:00.000Z',
+  it('asks for a new check-out time only while the pet is in', async () => {
+    vi.mocked(requestTimes).mockResolvedValue({
+      ...sentRequest,
+      details: { kind: 'times', pickUpTime: '14:00' },
+      quotedAmount: null,
     });
     const user = renderStays([biscuit]);
 
     await user.click(screen.getByRole('button', { name: 'Change time' }));
     const dialog = screen.getByRole('dialog', { name: 'Change time' });
     expect(within(dialog).queryByLabelText('Check-in time')).not.toBeInTheDocument();
-    const confirm = within(dialog).getByRole('button', { name: 'Change time' });
+    const confirm = within(dialog).getByRole('button', { name: 'Ask to change the time' });
     expect(confirm).toBeDisabled();
     fireEvent.change(within(dialog).getByLabelText('Check-out time'), {
       target: { value: '14:00' },
@@ -322,12 +310,10 @@ describe('changes while the pet is staying', () => {
       await user.click(confirm);
     });
 
-    expect(changeStayTimes).toHaveBeenCalledWith('booking-1', 'bp-biscuit', {
+    expect(requestTimes).toHaveBeenCalledWith('booking-1', 'bp-biscuit', {
       pickUpTime: '14:00',
     });
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Times changed. Check-in Sat 12 Dec 10:30, check-out Tue 15 Dec 14:00. Nothing was charged.',
-    );
+    expect(screen.getByRole('status')).toHaveTextContent(REQUEST_SENT);
   });
 
   it('opens the dialog a link names, then drops the parameters from the address', () => {

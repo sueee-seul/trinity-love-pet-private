@@ -5,7 +5,7 @@ import type { BoardingPassStatus, StayStatus, PetStay, StaysTab } from '../../ty
  * The words a pet parent reads for each stay status, in each site language. The server decides
  * the status from the manager's decision and the clock; every page names it with these words (My
  * stays, booking details, Home, Live care and the pet pages), so one stay is never called two
- * things. The Chinese matches the /book pages (等待审核, 已确认).
+ * things. The Chinese matches the /book pages ("waiting for review", "confirmed").
  */
 export const STAY_STATUS_COPY: PortalCopy<Record<StayStatus, string>> = {
   en: {

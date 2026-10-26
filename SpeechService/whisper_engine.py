@@ -41,7 +41,7 @@ TARGET_PEAK = 0.5
 MAX_GAIN = 30.0
 
 # No hotwords by default. Pet-care hotwords fixed a few Chinese homophones on clean clips, but on a
-# real laptop microphone Whisper repeated them as speech ("鸡肉过敏" three times over a noisy
+# real laptop microphone Whisper repeated them as speech ("allergic to chicken" in Chinese, three times over a noisy
 # pause), and an invented allergy in a pet's record is worse than a misheard word the owner sees
 # and corrects. WHISPER_HOTWORDS can still set some for an experiment.
 

@@ -132,7 +132,7 @@ export interface PetIntakeResult {
 
 export const MAX_INTAKE_LENGTH = 4000;
 /**
- * Short on purpose: "体重是30千克" (seven characters) is a whole fact in Chinese, and a ten-letter
+ * Short on purpose: "the weight is 30 kg" in Chinese (seven characters) is a whole fact in Chinese, and a ten-letter
  * floor written with English in mind refused it.
  */
 export const MIN_INTAKE_LENGTH = 2;

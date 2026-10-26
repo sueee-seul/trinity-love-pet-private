@@ -157,9 +157,7 @@ export const RequestReceipt: React.FC<RequestReceiptProps> = ({
 
       <div className="mt-5 border-t border-border-soft pt-4">
         <dl className="m-0 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <dt className={EYEBROW}>
-            {result.payment.status === 'charged' ? done.totalPaid : done.totalHeld}
-          </dt>
+          <dt className={EYEBROW}>{done.totalToPay}</dt>
           <dd className="m-0 font-fraunces text-card-title font-bold tabular-nums text-notice-primary">
             {formatNzd(result.total)}
           </dd>

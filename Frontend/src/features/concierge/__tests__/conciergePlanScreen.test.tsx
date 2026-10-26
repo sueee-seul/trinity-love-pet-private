@@ -25,7 +25,6 @@ vi.mock('../api/conciergeApi', () => ({
     chat: vi.fn(),
     priceSelection: vi.fn(),
     acceptQuote: vi.fn(),
-    cardSetup: vi.fn(),
     checkout: vi.fn(),
     status: vi.fn(),
     rates: vi.fn(),

@@ -92,7 +92,7 @@ describe('manager bell with booking requests', () => {
       'mock-pethouse-location',
       'booking',
       // New requests and "Decision due soon" reminders.
-      ['booking_request_created', 'booking_review_due'],
+      ['booking_request_created', 'booking_review_due', 'booking_change_requested'],
     ]);
     expect(list.params).toEqual([...count.params, null, null, 11]);
     expect(list.sql.match(/notification\.assignee_uuid = \$1::uuid/g)).toHaveLength(2);
@@ -128,7 +128,7 @@ describe('manager bell with booking requests', () => {
       MANAGER_ID,
       'google_review_created',
       'google_review',
-      ['booking_request_created', 'booking_review_due'],
+      ['booking_request_created', 'booking_review_due', 'booking_change_requested'],
       'booking',
     ]);
   });

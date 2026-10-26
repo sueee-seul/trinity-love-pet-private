@@ -12,7 +12,7 @@ Live care shows a pet parent the same tasks staff work on. Both sides read the `
 | Side        | A task at 00:00                                                   | A task with a time |
 | ----------- | ----------------------------------------------------------------- | ------------------ |
 | Staff pages | "Time not set"                                                    | its time           |
-| Live care   | "Time to be set" / "时间待定", listed last, never shown as "Next" | its time           |
+| Live care   | "Time to be set" (also in Chinese), listed last, never shown as "Next" | its time           |
 
 Tasks made from an approved booking (`task.fromBooking.mapping.ts`) now get a real time:
 
@@ -33,16 +33,16 @@ Tasks stored at 00:00 before this change keep "time not set" on both sides until
 
 | `tasks.status` | Live care shows      |
 | -------------- | -------------------- |
-| `pending`      | Upcoming / 待完成    |
-| `in_progress`  | In progress / 进行中 |
-| `completed`    | Completed / 已完成   |
+| `pending`      | Upcoming    |
+| `in_progress`  | In progress |
+| `completed`    | Completed   |
 | `cancelled`    | not shown            |
 
 Overdue is a staff-only signal. Live care never shows it; an overdue task stays "Upcoming".
 
 ## 3. The carer
 
-The carer comes from the roster (`employee_assignments`). With nobody rostered, the API sends `sitterName: null` and `location: null`, and the page says "Cared for by the Wagstay team" / "由 Wagstay 团队照顾" with no place line.
+The carer comes from the roster (`employee_assignments`). With nobody rostered, the API sends `sitterName: null` and `location: null`, and the page says "Cared for by the Wagstay team" (also in Chinese) with no place line.
 
 ## 4. Day stats
 

@@ -7,7 +7,6 @@ import {
 import {
   approvedBody,
   backInReviewBody,
-  bookingConfirmedBody,
   datesChangedBody,
   refusedBody,
   requestReceivedBody,
@@ -22,9 +21,12 @@ const OCTOBER_STAY = {
 const OCTOBER = { start: '2026-10-12', end: '2026-10-15' };
 
 describe('notice facts read back from every notice sentence', () => {
-  it('reads a booking confirmed at checkout', () => {
+  it('reads a booking confirmed at checkout, as older notices wrote it', () => {
     expect(
-      noticeFactsOf('booking_approved', bookingConfirmedBody(OCTOBER_STAY, 'PB-1A2B3C')),
+      noticeFactsOf(
+        'booking_approved',
+        'Your booking PB-1A2B3C for Max and Bella, 12 to 15 Oct 2026, is confirmed. Your boarding pass is in My stays.',
+      ),
     ).toEqual({
       template: 'confirmed',
       reference: 'PB-1A2B3C',
@@ -33,25 +35,21 @@ describe('notice facts read back from every notice sentence', () => {
     });
   });
 
-  it('reads a request with confirmed pets and pets our manager checks first', () => {
+  it('reads a request with every pet waiting for our manager', () => {
     const body = requestReceivedBody(
       { ...OCTOBER_STAY, petNames: ['Max', 'Bella', 'Coco'] },
       'PB-1',
-      [
-        { name: 'Max', reasons: [] },
-        { name: 'Bella', reasons: ['medication'] },
-        { name: 'Coco', reasons: ['medication'] },
-      ],
     );
 
     expect(noticeFactsOf('booking_request_received', body)).toEqual({
       template: 'received',
       reference: 'PB-1',
       dates: OCTOBER,
-      confirmed: ['Max'],
+      confirmed: [],
       waiting: [
-        { name: 'Bella', reasons: ['medication'] },
-        { name: 'Coco', reasons: ['medication'] },
+        { name: 'Max', reasons: [] },
+        { name: 'Bella', reasons: [] },
+        { name: 'Coco', reasons: [] },
       ],
     });
   });
@@ -117,10 +115,7 @@ describe('notice facts read back from every notice sentence', () => {
   });
 
   it('keeps commas in a list of names apart from the dates', () => {
-    const body = bookingConfirmedBody(
-      { ...OCTOBER_STAY, petNames: ['Max', 'Bella', 'Coco'] },
-      'PB-3',
-    );
+    const body = approvedBody({ ...OCTOBER_STAY, petNames: ['Max', 'Bella', 'Coco'] });
     expect(noticeFactsOf('booking_approved', body)).toMatchObject({
       pets: ['Max', 'Bella', 'Coco'],
       dates: OCTOBER,

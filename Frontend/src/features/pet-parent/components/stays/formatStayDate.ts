@@ -10,7 +10,7 @@ function dayMonth(date: Date, locale: PortalLocale): string {
     : `${date.getDate()} ${MONTHS[date.getMonth()]}`;
 }
 
-/** "2026年9月12日" in Chinese, "12 Sep 2026" in English. */
+/** "12 Sep 2026" in English, and year-month-day in Chinese. */
 function dayMonthYear(date: Date, locale: PortalLocale): string {
   return locale === 'zh'
     ? `${date.getFullYear()}年${dayMonth(date, locale)}`
@@ -18,7 +18,7 @@ function dayMonthYear(date: Date, locale: PortalLocale): string {
 }
 
 /** Formats a stay's drop-off/pick-up range like "12 to 16 Sep 2026" or "28 Sep to 2 Oct 2026"
- * ("2026年9月12日至16日" in Chinese): the month and the year are written once when both ends
+ * (year first in Chinese): the month and the year are written once when both ends
  * share them. Both inputs are absolute ISO timestamps; formatting renders them in the viewer's
  * local timezone. */
 export function formatDateRange(
@@ -52,13 +52,13 @@ const TIME_FORMATS: Readonly<Record<PortalLocale, Intl.DateTimeFormat>> = {
   zh: new Intl.DateTimeFormat('zh-CN', { hour: 'numeric', minute: '2-digit', hour12: true }),
 };
 
-/** Formats the time of an ISO timestamp like "2:00 pm" ("下午2:00"), for a row that already
+/** Formats the time of an ISO timestamp like "2:00 pm" (with the Chinese word for afternoon in front in Chinese), for a row that already
  * names the date. */
 export function formatTime(iso: string, locale: PortalLocale = 'en'): string {
   return TIME_FORMATS[locale].format(new Date(iso));
 }
 
-/** Formats a single ISO timestamp like "12 Sep 2026, 2:00 pm" ("2026年9月12日 下午2:00"). Used in
+/** Formats a single ISO timestamp like "12 Sep 2026, 2:00 pm" (year first, then the time, in Chinese). Used in
  * the booking details modal for drop-off, pick-up, and the created date. */
 export function formatDateTime(iso: string, locale: PortalLocale = 'en'): string {
   const date = new Date(iso);

@@ -15,7 +15,7 @@ import { SUMMARY_WORDS, type SummaryLocale } from './daily-summary.words.js';
 
 export interface DayFacts {
   petName: string;
-  /** The day as the parent reads it: "Sun 13 Dec" or "12月13日（周日）". */
+  /** The day as the parent reads it: "Sun 13 Dec", or the Chinese month-day with the weekday. */
   dayLabel: string;
   feedsDone: number;
   feedsPlanned: number;
@@ -32,7 +32,7 @@ export interface DayFacts {
   notes: string[];
   /** Kilograms from today's completed weight check ("12.4 kg"), or null when none was recorded. */
   weightKg: number | null;
-  /** Toilet breaks recorded today (potty, toilet, 如厕). */
+  /** Toilet breaks recorded today (potty, toilet, or the Chinese word for it). */
   toiletDone: number;
 }
 
@@ -47,7 +47,7 @@ const isWeighIn = (title: string): boolean => /weigh|体重|称重/i.test(title)
 const isToilet = (title: string): boolean =>
   /toilet|potty|pee|poo|bathroom break|如厕|上厕所|排便/i.test(title);
 
-/** "12.4 kg", "12.4kg", "体重12.4公斤": the first weight written on a weight check. */
+/** "12.4 kg", "12.4kg", or the Chinese "weight 12.4 kilograms": the first weight written on a weight check. */
 export const weightIn = (text: string | null): number | null => {
   const match = /(\d{1,3}(?:\.\d{1,2})?)\s*(?:kg|kgs|kilos?|公斤|千克)/i.exec(text ?? '');
   const kg = match ? Number(match[1]) : NaN;

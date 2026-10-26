@@ -159,7 +159,7 @@ sequenceDiagram
 | Step          | Endpoint                                             | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Price         | `POST /api/concierge/price`                          | Prices a stay the guest built in the panel (`needs`, `selection`, `locale`) and signs it as a 30-minute quote, exactly like a combo. `422 CONCIERGE_SELECTION_INVALID` for a room or food not in the catalogue, a pet without a choice, or a dog-only add-on for another animal.                                                                                                                                                                                                                |
-| Last stay     | `GET /api/concierge/last-stay`                       | Signed-in pet parents only: the pets, extras and services of their latest booking as needs and a selection (dates left out; a retired room or food falls back to the cheapest). The chat does the same when the guest writes "same as last time" or 和上次一样.                                                                                                                                                                                                                                 |
+| Last stay     | `GET /api/concierge/last-stay`                       | Signed-in pet parents only: the pets, extras and services of their latest booking as needs and a selection (dates left out; a retired room or food falls back to the cheapest). The chat does the same when the guest writes "same as last time" (in either language).                                                                                                                                                                                                                                 |
 | Continue      | `POST /api/concierge/quotes/accept`                  | Signs an acceptance of that exact quote's price with the time of the click (1 hour, unique id), and returns the quote's name for the summary. It agrees to nothing else.                                                                                                                                                                                                                                                                                                                        |
 | Sign in       | `POST /api/auth/check-email`, `POST /api/auth/login` | The shared sign-in endpoints, called from the booking page itself (`PasswordSignInForm`). An unknown address is sent to create an account; a staff account is refused and its session ended again. The page no longer calls the two email-code endpoints below (owner decision of 2026-10-07: password sign-in instead of codes).                                                                                                                                                               |
 | (unused)      | `POST /api/concierge/verification/start`             | Still served, no longer called by the page. Sends a 6-digit code (HMAC-hashed in memory, 10 minutes, 5 attempts per code, 60 s resend cooldown, 5 codes/hour). A spent code stays until it expires, so the cooldown still applies. After 10 wrong codes the email locks for 15 minutes, doubling each round up to 24 hours.                                                                                                                                                                     |
@@ -348,7 +348,7 @@ before check-in the parent uses Change dates and Cancel instead.
 
 The parent AI chat makes the same changes itself (Scenario 11 outcome 5), with the same services:
 "can I extend by one night?", "add a walk for Max", "check out at 3pm instead". A request to leave
-early ("pick her up early", "提前离店") gets a reply that early check-out is arranged with the team. `conversation.stay-changes.ts` reads the request (`conversation.stay-change.parse.ts`,
+early ("pick her up early", or the same in Chinese) gets a reply that early check-out is arranged with the team. `conversation.stay-changes.ts` reads the request (`conversation.stay-change.parse.ts`,
 English and Chinese), finds the stay under way or asks which pet, quotes the previewed amount with
 Confirm / Cancel, and on a yes applies it with that amount; a moved price is quoted again, never
 charged. It runs before the question-answering pipeline, so no model ever states an amount or says a
@@ -394,7 +394,7 @@ What each screen shows:
   stay" button with the current total; a reply that brought combos shows an "Open your stay"
   chip. The aside (from `lg`, sticky) is the "Your stay" checklist card as before. There is no
   pass on this screen: nothing is booked yet.
-- **verify** (shown as "Sign in to continue", 登录后继续): email and password on the booking page
+- **verify** (shown as "Sign in to continue"): email and password on the booking page
   itself (`components/checkout/SignInStep.tsx`, `PasswordSignInForm.tsx`), with "Forgot
   password?" and "Create an account" leading to the shared auth pages and back. The step keeps
   its old key in the store and the address (`?step=verify`), so saved plans still open. The
@@ -408,8 +408,8 @@ What each screen shows:
   box to agree, including the NZ$500 emergency vet consent. The name recorded with the agreement
   comes from the account. This is the only place the terms are agreed to. Choosing a
   package again (after "Change dates or package") unticks it, because that is a new request.
-- **done**: titled by the result: "Booking confirmed" (预约已确认) when every pet was confirmed,
-  "Booking sent" (预约已提交) when some wait, "Request sent" (申请已提交) when all wait. A plain
+- **done**: titled by the result: "Booking confirmed" when every pet was confirmed,
+  "Booking sent" when some wait, "Request sent" when all wait. A plain
   receipt, not the boarding pass: the reference with a copy button, "Confirmed" or "Waiting for
   review" for each pet, dates and nights, drop-off and pick-up times, the stay's lines, and
   the GST-inclusive total labelled "not charged yet". When a stay waits, its last line reads: "A
@@ -418,7 +418,7 @@ What each screen shows:
   events are "Wagstay stay" only when every pet is confirmed; otherwise they say "not yet
   confirmed". The tab keeps the receipt without pet names.
 
-The **boarding pass** (Chinese: 住宿凭证) appears only once a stay is confirmed, at checkout or by
+The **boarding pass** (called "stay pass" in Chinese) appears only once a stay is confirmed, at checkout or by
 a manager, because nothing may look booked before then (Fair Trading Act s9, s11). It is one component,
 `Frontend/src/features/pet-parent/components/stays/BoardingPass.tsx`, whose type accepts only an
 approved stay (`hasBoardingPass` in `stayStatus.ts`: approved, staying now or stay ended). It
@@ -445,7 +445,7 @@ competitor flows:
 | Instant booking with a few checked by hand (Rover, Airbnb)          | A stay with room is confirmed at once; a manager checks a pet on medication first.                 |
 | Hold at request, charge on acceptance (Airbnb, Pawshake)            | The full price is held when the request is sent and charged once the stay is confirmed.            |
 | Report cards (Rover, Wag, Gingr)                                    | A clearly labelled example day, limited to what Live Care actually records.                        |
-| Contact the merchant with the order attached (Meituan 联系商家)     | "Send this plan to our team": the guest's mail app sends only the plan.                            |
+| Contact the merchant with the order attached (Meituan "contact the merchant")     | "Send this plan to our team": the guest's mail app sends only the plan.                            |
 | Price shown at order is the final price (Meituan, JD)               | The agreed price is honoured at checkout; a hold that lapses is renewed if unchanged.              |
 | **Added**: never guess                                              | "Which pet takes medication?" instead of charging every pet; dates always read back with weekdays. |
 | **Added**: no dead ends                                             | Early notice and a hand-off when cards cannot be saved; errors recover in place, in EN/ZH.         |
@@ -471,7 +471,7 @@ this stay" would, and opens the one-step booking card (`QuickConfirmCard.tsx`,
 signs in first and sees it in place of the details form. The card shows the stay, dates, pets and
 total, the card form, the terms in short with every clause on demand, and one sentence that names
 both agreements of the full form: the booking terms with the card rules, and emergency vet consent
-up to NZ$500. One press on "Confirm booking", or a typed "confirm" / "确认" while the card is open
+up to NZ$500. One press on "Confirm booking", or a typed "confirm" (or the Chinese for it) while the card is open
 (`utils/quickConfirmReply.ts`, strict: a longer message still goes to the assistant), sends the
 request with `agreement.termsAccepted` and `agreement.vetConsentAccepted`, exactly as the form does
 after its two boxes are ticked. When the chat did not give everything the booking needs (a pet's
@@ -487,7 +487,7 @@ and the stay, keeps any dates already given and otherwise asks for them, and say
 copied. A guest is asked to sign in first; a parent with no earlier stay starts fresh. The guest
 still checks the stay, agrees and sends.
 
-On the page, a signed-in parent sees a "Same as last time" (和上次一样) answer button among the
+On the page, a signed-in parent sees a "Same as last time" answer button among the
 starters on the first turn, and only when `GET /api/concierge/last-stay` (read once per visit,
 `store/lastStay.ts`) says there is a stay to copy. The button is spoken to the assistant as a
 message, like "book it for me". The answer's `lastStay` links each copied pet to its saved
@@ -518,10 +518,10 @@ dropped, and "Start over" forgets it.
 
 The rules assistant understands simple English and Chinese phrasings, typed or dictated: "2 large
 dogs 12/10 to 15/10", "12 to 15 October", "the 12th of October to the 15th", "from 12 October for
-3 nights", "两只猫 10月12日到15日", "2026年10月12日到2026年10月15日", "10月12日住一周",
+3 nights", and the Chinese for "two cats, 12 to 15 October", "12 October 2026 to 15 October 2026" and "a week from 12 October",
 "12/10/2027 - 15/10/2027". It never guesses relative dates ("next weekend"), ignores fractions and
 "24/7", and only replaces dates already chosen when the message is clearly about the stay. A
-negated statement ("she doesn't need any medication", "不需要吃药") is never read as a yes. It
+negated statement ("she doesn't need any medication", or the same in Chinese) is never read as a yes. It
 never guesses which pet a detail belongs to: "my dog", "our cats" and pet names are understood,
 anything else is asked ("Which pet takes medication?"), and the answer ("the cat", "pet 2",
 "both", "none") is understood too. Free text about the pet it cannot read is kept in the notes

@@ -9,10 +9,8 @@ import { signAcceptedQuote, type SignedQuote } from '../services/concierge/conci
 import { notifyBookingPlaced } from '../services/booking.notifications.js';
 import * as bookingRepository from '../repositories/petparent.booking.repository.js';
 import * as conciergeRepository from '../repositories/concierge.repository.js';
-import { fakeCardSetupFor, TEST_SIGNING_SECRET } from './fixtures/concierge.fixtures.js';
+import { TEST_SIGNING_SECRET } from './fixtures/concierge.fixtures.js';
 import * as bookingCapacity from '../services/booking.capacity.js';
-import { FakeCardProcessor } from '../services/payments/fake-card-processor.js';
-import { setCardProcessorForTests } from '../services/payments/card-processor.factory.js';
 
 /**
  * Checkout tells the parent their request arrived and the managers that one is waiting, once the
@@ -66,7 +64,6 @@ const signedInRequest = async (): Promise<ConciergeCheckoutRequest> => {
   const acceptedQuoteToken = await signAcceptedQuote(quote, new Date(Date.now() - 60_000));
   return {
     acceptedQuoteToken,
-    cardSetupId: await fakeCardSetupFor(acceptedQuoteToken),
     pets: [{ newPet: { name: 'Max' } }],
     stay: { dropOffTime: '09:00', pickUpTime: '17:00' },
     agreement: { termsAccepted: true, vetConsentAccepted: true, termsVersionLabel: 'terms-v3' },
@@ -77,7 +74,6 @@ describe('checkout notices', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.CONCIERGE_SIGNING_SECRET = TEST_SIGNING_SECRET;
-    setCardProcessorForTests(new FakeCardProcessor());
     vi.mocked(bookingRepository.getServiceCatalogByIds).mockResolvedValue(
       new Map([
         [
@@ -106,8 +102,8 @@ describe('checkout notices', () => {
       signedInOwnerId: OWNER_ID,
     });
 
-    // A pet without medication is confirmed at once; the notices go either way.
-    expect(result.status).toBe('confirmed');
+    // Every request waits for our manager.
+    expect(result.status).toBe('awaiting_manager_approval');
     expect(notifyBookingPlaced).toHaveBeenCalledTimes(1);
     expect(notifyBookingPlaced).toHaveBeenCalledWith(BOOKING_ID, expect.any(Array));
     const saved = vi.mocked(bookingRepository.createBooking).mock.invocationCallOrder[0] ?? 0;

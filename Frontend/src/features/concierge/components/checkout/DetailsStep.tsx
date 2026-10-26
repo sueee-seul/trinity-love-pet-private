@@ -1,13 +1,9 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ConciergeCopy, DetailsField } from '../../copy';
-import { useCardConfirmation } from '../../hooks/useCardConfirmation';
-import { useCardGuarantee } from '../../hooks/useCardGuarantee';
 import { useConciergeCheckout } from '../../hooks/useConciergeCheckout';
-import { useConciergeStatus } from '../../hooks/useConciergeStatus';
 import { selectBookedNeeds, useConciergeStore } from '../../store/conciergeStore';
 import {
-  isEmailAddress,
   validateDetails,
   type DetailsContactDraft,
   type DetailsDraft,
@@ -23,7 +19,6 @@ import {
   TEXT_BUTTON,
 } from '../conciergeStyles';
 import { AgreementFields } from './AgreementFields';
-import { CardGuaranteeSection } from './CardGuaranteeSection';
 import { ContactFieldset } from './ContactFieldset';
 import { CareNotes, TimeChoice } from './DetailsFields';
 import { DetailsPets } from './DetailsPets';
@@ -41,9 +36,8 @@ interface DetailsStepProps {
 /**
  * Everything checkout needs, on one screen, with the request summarised beside it.
  *
- * Sending is two steps behind one button: the card form confirms the saved card with the
- * processor, then the request is sent with that card's setup id. The server then holds the full
- * price on it, and charges the confirmed stays (booking.settlement.ts).
+ * Sending asks our manager for the stay: nothing is paid online. The guest pays at the desk after
+ * the arrival health check.
  */
 export const DetailsStep: React.FC<DetailsStepProps> = ({ copy, onBack, onSignIn }) => {
   // The agreed plan, never an edit made after agreeing: this is what the booking will hold.
@@ -58,14 +52,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({ copy, onBack, onSignIn
   // Links change when the account's saved pets arrive, and the pet rows are rebuilt for them.
   const savedPetLinks = useConciergeStore((state) => state.savedPetLinks);
   const checkout = useConciergeCheckout();
-  const status = useConciergeStatus();
   const [touched, setTouched] = useState<Set<string>>(() => new Set());
-  // A first-time guest's card is saved for the account their email makes, once the email is in.
-  const typedEmail = draft?.contact.email.trim() ?? '';
-  const guestEmail =
-    checkout.needsContact && touched.has('email') && isEmailAddress(typedEmail) ? typedEmail : null;
-  const guarantee = useCardGuarantee(guestEmail);
-  const card = useCardConfirmation(guarantee, copy);
   const { details } = copy;
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
@@ -112,14 +99,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({ copy, onBack, onSignIn
   const setField = <K extends keyof DetailsDraft>(key: K, value: DetailsDraft[K]): void =>
     updateDetailsDraft((current) => ({ ...current, [key]: value }));
 
-  const send = async (): Promise<void> => {
-    const setupId = await card.confirmCard();
-    if (!setupId) return;
-    const outcome = await checkout.submit(draft, setupId);
-    if (outcome === 'card_again') card.startOver();
-  };
-
-  const busy = checkout.submitting || card.confirming;
+  const busy = checkout.submitting;
   const onSubmit = async (): Promise<void> => {
     if (busy) return;
     setSubmitAttempted(true);
@@ -127,13 +107,13 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({ copy, onBack, onSignIn
       setFocusRequest((count) => count + 1);
       return;
     }
-    await send();
+    await checkout.submit(draft);
   };
 
   const errorList = submitAttempted
     ? Array.from(new Set(Object.values(errors).filter((field): field is DetailsField => !!field)))
     : [];
-  const failure = errorList.length === 0 ? (card.cardError ?? checkout.error) : null;
+  const failure = errorList.length === 0 ? checkout.error : null;
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -228,17 +208,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({ copy, onBack, onSignIn
             onChange={(careNotes) => setField('careNotes', careNotes)}
           />
 
-          <CardGuaranteeSection
-            copy={copy}
-            locale={locale}
-            amount={accepted?.total ?? 0}
-            policy={status.policy}
-            guarantee={guarantee}
-            onConfirmReady={card.onConfirmReady}
-            waitingHint={
-              checkout.needsContact && !guestEmail ? details.account.cardNeedsEmail : null
-            }
-          />
+          <p className="m-0 type-body text-notice-secondary">{details.payAtDesk}</p>
 
           <AgreementFields
             copy={copy}
@@ -269,7 +239,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({ copy, onBack, onSignIn
           {failure && (
             <div role="alert" className="flex flex-col gap-2">
               <p className={ERROR_TEXT}>{failure}</p>
-              {!card.cardError && checkout.needsSignIn && (
+              {checkout.needsSignIn && (
                 // The session lapsed while the form was open (8 hours, or a sign-out in another
                 // tab). Signing in again happens over this screen, so nothing typed is lost.
                 <button
@@ -280,7 +250,7 @@ export const DetailsStep: React.FC<DetailsStepProps> = ({ copy, onBack, onSignIn
                   {copy.verify.signInAgain}
                 </button>
               )}
-              {!card.cardError && checkout.alreadySentReference && (
+              {checkout.alreadySentReference && (
                 <Link to="/parent/stays" className={`${TEXT_BUTTON} self-start px-0`}>
                   {copy.done.myStays}
                 </Link>

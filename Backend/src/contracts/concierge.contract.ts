@@ -403,50 +403,26 @@ export const conciergeNewAccountSchema = z.object({
 
 export type ConciergeNewAccount = z.infer<typeof conciergeNewAccountSchema>;
 
-/**
- * Asks for a card setup for one accepted quote, for the signed-in parent, a verified email or a
- * first-time guest's email (`guestEmail`).
- */
-export const conciergeCardSetupSchema = z.object({
-  acceptedQuoteToken: z.string().min(20).max(8000),
-  verificationToken: z.string().min(20).max(4000).optional(),
-  guestEmail: guestEmailSchema.optional(),
-});
-
-export type ConciergeCardSetupRequest = z.infer<typeof conciergeCardSetupSchema>;
-
-export interface ConciergeCardSetupResponse {
-  processor: 'stripe' | 'fake';
-  setupId: string;
-  /** For the card form in the browser, which confirms the setup with the processor. */
-  clientSecret: string;
-  /** Browser key for the Stripe card form; null in fake mode. */
-  publishableKey: string | null;
-  testMode: boolean;
-}
-
 export const conciergeCheckoutSchema = z.object({
   acceptedQuoteToken: z.string().min(20).max(8000),
   verificationToken: z.string().min(20).max(4000).optional(),
   /** A first-time guest's account, made with the booking (instead of signing in first). */
   newAccount: conciergeNewAccountSchema.optional(),
-  /** The confirmed card setup that guarantees the booking. */
-  cardSetupId: z.string().trim().min(8).max(255),
   contact: conciergeContactSchema.optional(),
   pets: z.array(conciergeCheckoutPetSchema).min(1).max(CONCIERGE_MAX_PETS),
   stay: z.object({ dropOffTime: timeSchema, pickUpTime: timeSchema }),
   /**
-   * Two ticks, both required: the booking terms including the card hold, charges and fees, and the
-   * emergency vet consent on its own (a separate tick is clearer evidence of that consent). The
-   * agreement row records the version, the time and the account name; the server refuses a
-   * request without either tick, so the row stands for both.
+   * Two ticks, both required: the booking terms, and the emergency vet consent on its own (a
+   * separate tick is clearer evidence of that consent). The agreement row records the version,
+   * the time and the account name; the server refuses a request without either tick, so the row
+   * stands for both.
    */
   agreement: z.object({
     termsAccepted: z.literal(true),
     vetConsentAccepted: z.literal(true),
     termsVersionLabel: z.string().trim().min(1).max(40),
   }),
-  /** Free-text care notes for staff; safety details are collected after payment. */
+  /** Free-text care notes for staff; safety details are collected after the request. */
   careNotes: z.string().trim().max(1000).optional(),
 });
 
@@ -482,16 +458,14 @@ export interface ConciergeCheckoutResponse {
 }
 
 /**
- * What happened on the card. `charged`: every pet was confirmed, so their price was taken. `held`:
- * some pets wait for our manager; the full price is held until `reviewBy`, then the confirmed
- * pets are charged and the rest released.
+ * Nothing is paid online: every pet waits for our manager, and the guest pays `amount` at the
+ * desk after the arrival health check.
  */
 export interface ConciergeCheckoutPayment {
-  status: 'charged' | 'held';
+  status: 'pay_at_desk';
   amount: number;
-  /** When our manager will have decided (24 hours, or drop-off if sooner); null once charged. */
-  reviewBy: string | null;
-  testMode: boolean;
+  /** When our manager will have decided (24 hours, or drop-off if sooner). */
+  reviewBy: string;
 }
 
 export type ConciergeCheckoutStatus =

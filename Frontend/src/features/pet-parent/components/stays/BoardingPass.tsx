@@ -27,7 +27,7 @@ function PassRow({
 }
 
 /**
- * The boarding pass (住宿凭证 on the Chinese booking page): the record of a stay our manager
+ * The boarding pass (called "stay pass" on the Chinese booking page): the record of a stay our manager
  * approved. The contract forms when that approval reaches the parent, so the pass exists only from
  * then on, and its type accepts nothing else: a request still waiting, refused or cancelled is not
  * a booking (see `hasBoardingPass`). The booking page shows a plain request receipt instead.

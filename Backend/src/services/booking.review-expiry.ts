@@ -18,6 +18,7 @@ import { pool } from '../config/database.js';
 import { BOOKING_POLICY } from './booking.fee-policy.js';
 import { composeRefusedNotice } from './booking.notifications.js';
 import { chargeWhenDecided } from './booking.settlement.js';
+import { postBookingNoticeToChat } from './booking.chat-notices.js';
 import { sendBookingNoticeEmail } from './booking.transaction-emails.js';
 import type { CardProcessor } from './payments/card-processor.js';
 import { toConfirmationNumber } from './petparent.booking.js';
@@ -115,7 +116,10 @@ export const runReviewExpiryPass = async (
     try {
       if (request.deadline.getTime() <= context.now.getTime()) {
         const notices = await expireRequest(request.bookingId, context.cardProcessor);
-        for (const notice of notices) void sendBookingNoticeEmail(notice);
+        for (const notice of notices) {
+          void sendBookingNoticeEmail(notice);
+          void postBookingNoticeToChat(notice);
+        }
         summary.expired += 1;
       } else {
         await insertManagerFlag(pool, {

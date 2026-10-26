@@ -66,7 +66,8 @@ const toStatus = (response: ConciergeStatusResponse): ConciergeStatus => ({
   teamEmail: response.contact.email,
   teamPhone: response.contact.phone,
   cardPayments: response.cardPayments,
-  onlineBooking: response.capacityConfigured && response.cardPayments.processor !== null,
+  // Nothing is paid online, so a room count is all a request needs.
+  onlineBooking: response.capacityConfigured,
   policy: response.policy,
   // An older server says nothing about the assistant; the greeting then stays neutral.
   assistantMode: response.assistantMode ?? null,

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppError } from '../common/middlewares/error.middleware.js';
 import { newZealandWallClockToDate } from '../common/utils/new-zealand-time.js';
 import type { MyBookingPetRow } from '../repositories/petparent.booking.read.repository.js';
+import type { StayChangeRequestView } from '../contracts/booking.change.contract.js';
 import {
   PENDING_STAY_CHANGE_TTL_MS,
   runStayChangeTurn,
@@ -36,6 +37,20 @@ const row = (overrides: Partial<MyBookingPetRow> = {}): MyBookingPetRow => ({
 
 const MAX = row({ bookingPetId: 'bp-max', petId: 'pet-max', petName: 'Max' });
 
+/** A change request as the server saves it; only its summary is read by the chat. */
+const requestView = (summary: string): StayChangeRequestView => ({
+  id: 'request-1',
+  bookingId: BOOKING,
+  bookingPetId: null,
+  details: { kind: 'extend', endDate: '2026-10-11' },
+  quotedAmount: null,
+  status: 'pending',
+  refusalReason: null,
+  summary,
+  createdAt: NOW.toISOString(),
+  decidedAt: null,
+});
+
 const deps = (overrides: StayChangeDependencies = {}): StayChangeDependencies => ({
   now: () => NOW,
   listBookings: vi.fn(async () => [row()]),
@@ -47,15 +62,9 @@ const deps = (overrides: StayChangeDependencies = {}): StayChangeDependencies =>
     amount: endDate === '2026-10-11' ? 68 : 136,
     settlement: 'card' as const,
   })),
-  extendStay: vi.fn(async (_owner, _booking, input) => ({
-    currentEndDate: '2026-10-10',
-    newEndDate: input.endDate,
-    addedNights: 1,
-    pets: [{ bookingPetId: 'bp-bella', petName: 'Bella', nightlyRate: 68, amount: 68 }],
-    amount: 68,
-    settlement: 'card' as const,
-    chargeId: 'charge-1',
-  })),
+  requestExtension: vi.fn(async (_owner, _booking, input) =>
+    requestView(`extend Bella's stay to ${input.endDate} ($68.00)`),
+  ),
   listAddOns: vi.fn(async () => ({
     offers: [
       {
@@ -83,21 +92,14 @@ const deps = (overrides: StayChangeDependencies = {}): StayChangeDependencies =>
     days: ['2026-10-07', '2026-10-08', '2026-10-09'],
     settlement: 'card' as const,
   })),
-  bookAddOn: vi.fn(async (_owner, _booking, bookingPetId, input) => ({
-    chargeId: 'charge-2',
-    bookingPetId,
-    petName: bookingPetId === 'bp-max' ? 'Max' : 'Bella',
-    serviceName: 'Extra walk',
-    date: input.date,
-    quantity: 1,
-    amount: 15,
-    taskId: 'task-1',
-    settlement: 'card' as const,
-  })),
-  changeStayTimes: vi.fn(async () => ({
-    dropOffAt: newZealandWallClockToDate('2026-10-05', '09:00').toISOString(),
-    pickUpAt: newZealandWallClockToDate('2026-10-10', '15:00').toISOString(),
-  })),
+  requestAddOn: vi.fn(async (_owner, _booking, bookingPetId, input) =>
+    requestView(
+      `Extra walk for ${bookingPetId === 'bp-max' ? 'Max' : 'Bella'} on ${input.date} ($15.00)`,
+    ),
+  ),
+  requestTimes: vi.fn(async (_owner, _booking, bookingPetId) =>
+    requestView(`new times for ${bookingPetId === 'bp-max' ? 'Max' : 'Bella'}: check-out 3:00 pm`),
+  ),
   claimPending: vi.fn(async () => true),
   ...overrides,
 });
@@ -131,27 +133,31 @@ describe('extending a stay from the chat', () => {
     expect(turn.reply).toMatch(/Shall I go ahead\?$/);
     expect(turn.quickReplies).toEqual(['Confirm', 'Cancel']);
     expect(turn.pending).toMatchObject({ kind: 'extend', end_date: '2026-10-11', amount: 68 });
-    expect(d.extendStay).not.toHaveBeenCalled();
+    expect(d.requestExtension).not.toHaveBeenCalled();
   });
 
-  it('extends on a yes, with the amount the parent was shown, and says what was charged', async () => {
+  it('sends our manager a request on a yes, with the amount the parent was shown', async () => {
     const d = deps();
     const { pending } = await quoted('Can I extend the stay by one night?', d);
 
     const done = await say('yes please', d, pending);
 
     expect(d.claimPending).toHaveBeenCalledTimes(1);
-    expect(d.extendStay).toHaveBeenCalledWith(OWNER, BOOKING, {
-      endDate: '2026-10-11',
-      expectedAmount: 68,
-    });
-    expect(done?.reply).toMatch(/^Done: Bella now stays until Sun 11 Oct\. NZ\$68\.00 was charged/);
+    expect(d.requestExtension).toHaveBeenCalledWith(
+      OWNER,
+      BOOKING,
+      { endDate: '2026-10-11', expectedAmount: 68 },
+      { announceInChat: false },
+    );
+    expect(done?.reply).toBe(
+      "I've asked our manager to extend Bella's stay to 2026-10-11 ($68.00). Nothing changes until it is approved, and I'll tell you here once they decide. Any amount is added to your bill, paid at the desk at pick-up.",
+    );
     expect(done?.pending).toBeNull();
   });
 
   it('quotes the new price instead of charging when the price moved since the quote', async () => {
     const d = deps({
-      extendStay: vi.fn(async () => {
+      requestExtension: vi.fn(async () => {
         throw new AppError('The price changed', 'EXTENSION_PRICE_CHANGED', 409, [{ amount: 74 }]);
       }),
     });
@@ -175,7 +181,7 @@ describe('extending a stay from the chat', () => {
       quickReplies: null,
       pending: null,
     });
-    expect(d.extendStay).not.toHaveBeenCalled();
+    expect(d.requestExtension).not.toHaveBeenCalled();
   });
 
   it('never applies an old quote: after 15 minutes a yes is just a message', async () => {
@@ -187,7 +193,7 @@ describe('extending a stay from the chat', () => {
     };
 
     expect(await say('yes', d, stale)).toBeNull();
-    expect(d.extendStay).not.toHaveBeenCalled();
+    expect(d.requestExtension).not.toHaveBeenCalled();
   });
 
   it('does not apply twice when another turn already took the quote', async () => {
@@ -197,20 +203,20 @@ describe('extending a stay from the chat', () => {
     const turn = await say('yes', d, pending);
 
     expect(turn?.reply).toBe('That change is already being made.');
-    expect(d.extendStay).not.toHaveBeenCalled();
+    expect(d.requestExtension).not.toHaveBeenCalled();
   });
 
-  it('says plainly when the card is declined, and keeps nothing waiting', async () => {
+  it('says plainly when the nights filled up before the request was sent', async () => {
     const d = deps({
-      extendStay: vi.fn(async () => {
-        throw new AppError('declined', 'CARD_DECLINED', 402);
+      requestExtension: vi.fn(async () => {
+        throw new AppError('full', 'CONCIERGE_FULLY_BOOKED', 409, [{ night: '2026-10-11' }]);
       }),
     });
     const { pending } = await quoted('Can I extend the stay by one night?', d);
 
     const turn = await say('ok', d, pending);
 
-    expect(turn?.reply).toMatch(/^Your card was declined, so nothing was changed/);
+    expect(turn?.reply).toContain("We're full on Sun 11 Oct");
     expect(turn?.pending).toBeNull();
   });
 
@@ -254,7 +260,7 @@ describe('leaving early from the chat', () => {
 
     expect(turn?.reply).toMatch(/contact our team/);
     expect(turn?.pending).toBeNull();
-    expect(d.changeStayTimes).not.toHaveBeenCalled();
+    expect(d.requestTimes).not.toHaveBeenCalled();
   });
 
   it('answers in Chinese with check-out words', async () => {
@@ -266,7 +272,7 @@ describe('leaving early from the chat', () => {
 });
 
 describe('a new check-out day or time', () => {
-  it('quotes a free time change on the booked day and applies it to every pet', async () => {
+  it('quotes a free time change on the booked day and asks for it for every pet', async () => {
     const d = deps({ listBookings: vi.fn(async () => [row(), MAX]) });
     const turn = await quoted('Can I pick them up at 3pm instead?', d);
 
@@ -275,12 +281,16 @@ describe('a new check-out day or time', () => {
     );
     const done = await say('yes', d, turn.pending);
 
-    expect(d.changeStayTimes).toHaveBeenCalledTimes(2);
-    expect(d.changeStayTimes).toHaveBeenCalledWith(OWNER, BOOKING, 'bp-max', {
-      pickUpTime: '15:00',
-    });
-    expect(done?.reply).toBe(
-      'Done: check-out is now 3:00 pm on Sat 10 Oct. The team has been told.',
+    expect(d.requestTimes).toHaveBeenCalledTimes(2);
+    expect(d.requestTimes).toHaveBeenCalledWith(
+      OWNER,
+      BOOKING,
+      'bp-max',
+      { pickUpTime: '15:00' },
+      { announceInChat: false },
+    );
+    expect(done?.reply).toMatch(
+      /^I've asked our manager to new times for Bella: check-out 3:00 pm; new times for Max: check-out 3:00 pm\./,
     );
   });
 
@@ -323,15 +333,14 @@ describe('add-ons from the chat', () => {
       'Extra walk for Max on Thu 8 Oct: NZ$15.00 (GST included), charged to the card saved on this booking. Shall I book it?',
     );
     const done = await say('yes', d, turn?.pending ?? null);
-    expect(d.bookAddOn).toHaveBeenCalledWith(OWNER, BOOKING, 'bp-max', {
-      serviceId: 'svc-walk',
-      date: '2026-10-08',
-      quantity: 1,
-      expectedAmount: 15,
-    });
-    expect(done?.reply).toMatch(
-      /^Booked: Extra walk for Max on Thu 8 Oct\. NZ\$15\.00 was charged/,
+    expect(d.requestAddOn).toHaveBeenCalledWith(
+      OWNER,
+      BOOKING,
+      'bp-max',
+      { serviceId: 'svc-walk', date: '2026-10-08', quantity: 1, expectedAmount: 15 },
+      { announceInChat: false },
     );
+    expect(done?.reply).toMatch(/^I've asked our manager to Extra walk for Max on 2026-10-08/);
   });
 
   it('says the add-on goes on the bill for check-out when the booking has no saved card', async () => {
@@ -349,23 +358,12 @@ describe('add-ons from the chat', () => {
         days: ['2026-10-07', '2026-10-08'],
         settlement: 'desk' as const,
       })),
-      bookAddOn: vi.fn(async (_owner, _booking, bookingPetId, input) => ({
-        chargeId: 'charge-3',
-        bookingPetId,
-        petName: 'Bella',
-        serviceName: 'Extra walk',
-        date: input.date,
-        quantity: 1,
-        amount: 15,
-        taskId: 'task-2',
-        settlement: 'desk' as const,
-      })),
     });
     const turn = await quoted('Can I add a walk tomorrow?', d);
     expect(turn.reply).toContain('added to your bill and paid at the desk when you check out');
 
     const done = await say('yes', d, turn.pending);
-    expect(done?.reply).toContain('to pay at the desk when you check out');
+    expect(done?.reply).toContain('paid at the desk at pick-up');
     expect(done?.reply).not.toMatch(/charged/);
   });
 
@@ -393,7 +391,7 @@ describe('messages that are not stay changes', () => {
     const { pending } = await quoted('Can I extend the stay by one night?', d);
 
     expect(await say('Did she eat her breakfast?', d, pending)).toBeNull();
-    expect(d.extendStay).not.toHaveBeenCalled();
+    expect(d.requestExtension).not.toHaveBeenCalled();
   });
 });
 

@@ -34,7 +34,6 @@ vi.mock('../api/conciergeApi', () => ({
     chat: vi.fn(),
     priceSelection: vi.fn(),
     acceptQuote: vi.fn(),
-    cardSetup: vi.fn(),
     checkout: vi.fn(),
     status: vi.fn(),
     rates: vi.fn(),
@@ -65,8 +64,7 @@ const rex: Pet = {
   needsMedication: null,
 };
 
-const TERMS_BOX =
-  'I agree to the booking terms, including how my card is held, charged and refunded';
+const TERMS_BOX = 'I agree to the booking terms';
 
 /** Shows the address the booking page has written, so a test can open it again. */
 const AddressBar: React.FC = () => {
@@ -292,7 +290,6 @@ describe('a signed-in parent is asked each fact once', () => {
         name: /emergency vet treatment for my pet/,
       }),
     );
-    await screen.findByText('Test mode: no card is needed and nothing is charged.');
     await act(async () => {
       await user.click(screen.getByRole('button', { name: 'Send booking request' }));
     });

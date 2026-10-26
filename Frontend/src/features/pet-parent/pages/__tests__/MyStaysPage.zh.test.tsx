@@ -173,7 +173,9 @@ describe('My Stays in Chinese', () => {
 
     const summary = within(dialog).getByRole('status');
     expect(summary).toHaveTextContent('12月19日周六 至 12月22日周二，共 3 晚。新的总价：$460.00。');
-    expect(summary).toHaveTextContent('这次会用掉你唯一一次免费改期。原来的冻结会解除。');
+    expect(summary).toHaveTextContent(
+      '这次会用掉你唯一一次免费改期。新的日期需要经理重新审核批准。',
+    );
 
     await act(async () => {
       await user.click(within(dialog).getByRole('button', { name: '确认改期' }));

@@ -10,7 +10,7 @@ export interface NotificationPreferencesCopy {
   language: string;
   /**
    * Each language named in the page's language: the owner's rule is that no Chinese character shows
-   * in English mode, so English mode reads "Chinese" and Chinese mode reads "英文".
+   * in English mode, so English mode reads "Chinese" and Chinese mode reads the Chinese word for "English".
    */
   languageNames: Record<NotificationLocale, string>;
   languageHint: string;
@@ -26,7 +26,7 @@ export interface NotificationPreferencesCopy {
   saving: string;
   saved: string;
   saveFailed: string;
-  /** "5:00 pm" or "下午5:00", for an hour of the day (0 to 23). */
+  /** "5:00 pm", or with the Chinese word for afternoon, for an hour of the day (0 to 23). */
   hour: (hour: number) => string;
 }
 

@@ -7,15 +7,22 @@ import {
   extendStaySchema,
   extensionQuerySchema,
 } from '../contracts/booking.change.contract.js';
-import { bookAddOn, listAddOns } from '../services/booking.guest-addon.js';
-import { extendStay, previewExtension } from '../services/booking.guest-extend.js';
-import { changeStayTimes } from '../services/booking.guest-times.js';
+import { listAddOns } from '../services/booking.guest-addon.js';
+import { previewExtension } from '../services/booking.guest-extend.js';
+import {
+  listMyStayChangeRequests,
+  requestAddOn,
+  requestExtension,
+  requestTimes,
+  withdrawStayChangeRequest,
+} from '../services/stay-change-requests.js';
 
 /**
- * A pet parent changing a stay that is under way: more nights, an add-on for a day, or a new time
- * of day. Each is priced by a GET and applied by a POST that carries the
- * amount the parent saw. Every call is scoped to the signed-in owner: another owner's booking
- * answers 404, exactly like one that does not exist.
+ * A pet parent asking to change a stay that is under way: more nights, an add-on for a day, or a
+ * new time of day. Each is priced by a GET; the POST (or PATCH) carries the amount the parent saw
+ * and saves a request for a manager to approve (stay-change-requests.ts). Nothing changes until
+ * then. Every call is scoped to the signed-in owner: another owner's booking answers 404, exactly
+ * like one that does not exist.
  */
 
 const ownerIdOf = (req: Request): string => {
@@ -44,7 +51,11 @@ export const getExtension = handle((req) => {
 });
 
 export const postExtension = handle((req) =>
-  extendStay(ownerIdOf(req), uuidParam(req.params.bookingId), extendStaySchema.parse(req.body)),
+  requestExtension(
+    ownerIdOf(req),
+    uuidParam(req.params.bookingId),
+    extendStaySchema.parse(req.body),
+  ),
 );
 
 export const getAddOns = handle((req) =>
@@ -52,7 +63,7 @@ export const getAddOns = handle((req) =>
 );
 
 export const postAddOn = handle((req) =>
-  bookAddOn(
+  requestAddOn(
     ownerIdOf(req),
     uuidParam(req.params.bookingId),
     uuidParam(req.params.bookingPetId),
@@ -61,10 +72,17 @@ export const postAddOn = handle((req) =>
 );
 
 export const patchTimes = handle((req) =>
-  changeStayTimes(
+  requestTimes(
     ownerIdOf(req),
     uuidParam(req.params.bookingId),
     uuidParam(req.params.bookingPetId),
     changeTimesSchema.parse(req.body),
   ),
 );
+
+export const getStayChangeRequests = handle((req) => listMyStayChangeRequests(ownerIdOf(req)));
+
+export const postWithdrawStayChangeRequest = handle(async (req) => {
+  await withdrawStayChangeRequest(ownerIdOf(req), uuidParam(req.params.requestId));
+  return { withdrawn: true };
+});

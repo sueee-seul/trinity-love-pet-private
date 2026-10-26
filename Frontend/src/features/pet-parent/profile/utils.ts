@@ -1,7 +1,7 @@
 import type { PortalCopy, PortalLocale } from '../i18n/portalLocale';
 import type { Species } from './types';
 
-/** The calendar each language writes dates in: "18 Apr 1992" in English, "1992年4月18日" in Chinese. */
+/** The calendar each language writes dates in: "18 Apr 1992" in English, year-month-day in Chinese. */
 const DATE_LOCALES: PortalCopy<string> = { en: 'en-NZ', zh: 'zh-CN' };
 
 export function formatDate(iso: string, locale: PortalLocale = 'en'): string {

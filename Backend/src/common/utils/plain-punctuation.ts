@@ -8,7 +8,7 @@
  * Each dash becomes what it most likely meant:
  *
  *   1. Between two range ends (numbers, times, months or weekdays) it is a range, so it becomes
- *      " to " in English and "至" in Chinese.
+ *      " to " in English and the Chinese word for "to" in Chinese.
  *   2. At the start or end of a line, or right beside other punctuation, it adds nothing, so it is
  *      dropped. This is also what keeps ", ." pairs and double spaces from appearing.
  *   3. Anywhere else it is a pause, so it becomes ", " in English and "，" in Chinese.
@@ -40,7 +40,7 @@ const LANGUAGE_NEUTRAL_CHARACTER = /[\s\d.,:;/%()'"[\]\u2013\u2014\u2015-]/;
 const MONTH_NAME = String.raw`(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)`;
 const WEEKDAY_NAME = String.raw`(?:mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)`;
 
-/** "12", "9:00", "8am", "8 p.m.", "12日", "3点", "Oct" or "Friday" at the end of the text before a dash. */
+/** "12", "9:00", "8am", "8 p.m.", a Chinese day or hour, "Oct" or "Friday" at the end of the text before a dash. */
 const RANGE_START = new RegExp(
   String.raw`(?:\d(?:\s?[ap]\.?m\.?|[年月日号点时])?|\b${MONTH_NAME}\.?|\b${WEEKDAY_NAME}\.?)$`,
   'i',

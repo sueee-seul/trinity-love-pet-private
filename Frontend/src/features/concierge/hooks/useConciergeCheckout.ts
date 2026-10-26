@@ -13,14 +13,9 @@ import {
 } from '../utils/validateDetails';
 import { refreshSession, useSignedInPetOwner } from './useSignedInPetOwner';
 
-export const TERMS_VERSION_LABEL = 'concierge-terms-2026-10-07';
+export const TERMS_VERSION_LABEL = 'concierge-terms-2026-10-14';
 
-/**
- * `card_again`: the card has to be entered again (its setup is not confirmed, or no longer matches
- * the agreement, e.g. after the price hold was renewed). The card form fetches a fresh setup itself.
- */
-export type CheckoutOutcome =
-  'sent' | 'needs_sign_in' | 'back_to_options' | 'card_again' | 'failed';
+export type CheckoutOutcome = 'sent' | 'needs_sign_in' | 'back_to_options' | 'failed';
 
 /** The server no longer knows who is sending: the session lapsed since the page was opened. */
 const SIGN_IN_AGAIN_CODES = new Set([
@@ -44,16 +39,8 @@ interface ConciergeCheckout {
   serverFieldErrors: DetailsErrors;
   /** Set when this request was already sent: its reference, for the guest to keep. */
   alreadySentReference: string | null;
-  submit: (draft: DetailsDraft, cardSetupId: string) => Promise<CheckoutOutcome>;
+  submit: (draft: DetailsDraft) => Promise<CheckoutOutcome>;
 }
-
-// The card form starts again: the card was not confirmed, or the hold on it was refused.
-const CARD_AGAIN_CODES = new Set([
-  'CONCIERGE_CARD_NOT_READY',
-  'CONCIERGE_CARD_MISMATCH',
-  'CONCIERGE_CARD_DECLINED',
-  'CONCIERGE_CARD_AUTHENTICATION_REQUIRED',
-]);
 
 const CONTACT_FIELDS: ReadonlySet<string> = new Set<keyof DetailsContactDraft>([
   'email',
@@ -79,7 +66,6 @@ interface RequestContext {
   acceptedQuoteToken: string;
   verificationToken: string | null;
   needsContact: boolean;
-  cardSetupId: string;
 }
 
 const buildRequest = (draft: DetailsDraft, context: RequestContext): ConciergeCheckoutRequest => {
@@ -87,7 +73,6 @@ const buildRequest = (draft: DetailsDraft, context: RequestContext): ConciergeCh
   return {
     acceptedQuoteToken: context.acceptedQuoteToken,
     ...(context.verificationToken ? { verificationToken: context.verificationToken } : {}),
-    cardSetupId: context.cardSetupId,
     ...(context.needsContact
       ? {
           // No sign-in and no email code: the account is made with the booking.
@@ -131,14 +116,13 @@ const serverFieldErrorsFor = (fields: string[]): DetailsErrors => {
 };
 
 /**
- * Sends the booking request. A new guest supplies contact details (their account is created from
- * them); a signed-in owner's pets linked to their saved pets are sent by id, so none is added twice.
- * The card form confirms the saved card first and hands over its setup id.
+ * Sends the booking request. Nothing is paid online: the request waits for our manager. A new
+ * guest supplies contact details (their account is created from them); a signed-in owner's pets
+ * linked to their saved pets are sent by id, so none is added twice.
  *
  * Nothing the guest typed is lost on a failure. An expired agreement is renewed in place when the
- * price is unchanged, after which the card is entered again (its setup belonged to the old
- * agreement); a lapsed session asks the parent to sign in again on the same screen; a changed
- * price or a full night goes back to the options.
+ * price is unchanged and the request is sent again; a lapsed session asks the parent to sign in
+ * again on the same screen; a changed price or a full night goes back to the options.
  */
 export const useConciergeCheckout = (): ConciergeCheckout => {
   const locale = useConciergeStore((state) => state.locale);
@@ -165,7 +149,7 @@ export const useConciergeCheckout = (): ConciergeCheckout => {
     return true;
   };
 
-  const send = async (draft: DetailsDraft, cardSetupId: string): Promise<void> => {
+  const send = async (draft: DetailsDraft): Promise<void> => {
     const { accepted, verificationToken } = useConciergeStore.getState();
     if (!accepted) throw new Error('No agreed stay to send');
     // The request tells the server both boxes were ticked, so it is only sent once they are.
@@ -176,7 +160,6 @@ export const useConciergeCheckout = (): ConciergeCheckout => {
         acceptedQuoteToken: accepted.acceptedQuoteToken,
         verificationToken,
         needsContact: !signedIn,
-        cardSetupId,
       }),
     );
     // The booking exists now: show the confirmation first, whatever happens next.
@@ -196,7 +179,7 @@ export const useConciergeCheckout = (): ConciergeCheckout => {
     return outcome;
   };
 
-  const submit = async (draft: DetailsDraft, cardSetupId: string): Promise<CheckoutOutcome> => {
+  const submit = async (draft: DetailsDraft): Promise<CheckoutOutcome> => {
     const copy = CONCIERGE_COPY[locale];
     setSubmitting(true);
     setFailure(null);
@@ -205,7 +188,7 @@ export const useConciergeCheckout = (): ConciergeCheckout => {
     setServerFieldErrors({});
     setAlreadySentReference(null);
     try {
-      await send(draft, cardSetupId);
+      await send(draft);
       return 'sent';
     } catch (failure: unknown) {
       const problem = describeConciergeError(failure, copy);
@@ -217,11 +200,16 @@ export const useConciergeCheckout = (): ConciergeCheckout => {
         // that changed: the guest goes back to the options, which say why.
         const renewed = await renewAgreement().catch(() => false);
         if (renewed) {
-          return fail(
-            (words) => words.errors.cardNotReady,
-            'CONCIERGE_CARD_NOT_READY',
-            'card_again',
-          );
+          try {
+            await send(draft);
+            return 'sent';
+          } catch (retryFailure: unknown) {
+            return fail(
+              (words) => describeConciergeError(retryFailure, words).message,
+              describeConciergeError(retryFailure, copy).code,
+              'failed',
+            );
+          }
         }
         const store = useConciergeStore.getState();
         // A changed price has already been announced on the card; otherwise say why.
@@ -234,7 +222,13 @@ export const useConciergeCheckout = (): ConciergeCheckout => {
         (problem.code !== null && SIGN_IN_AGAIN_CODES.has(problem.code));
       if (sessionLapsed) {
         setNeedsSignIn(true);
-        return fail((words) => words.errors.signInAgain, problem.code, 'needs_sign_in');
+        // A first-time guest whose email already has an account is told so, not that a sign-in
+        // expired: they never signed in.
+        const message: LocalisedText =
+          problem.code === 'CONCIERGE_ACCOUNT_EXISTS'
+            ? (words) => describeConciergeError(failure, words).message
+            : (words) => words.errors.signInAgain;
+        return fail(message, problem.code, 'needs_sign_in');
       }
       if (problem.code === 'CONCIERGE_FULLY_BOOKED') {
         // The last place went while the guest was typing: back to the plan, where a fresh
@@ -244,13 +238,6 @@ export const useConciergeCheckout = (): ConciergeCheckout => {
         store.backToOptions();
         void store.refreshQuotes();
         return 'back_to_options';
-      }
-      if (problem.code && CARD_AGAIN_CODES.has(problem.code)) {
-        return fail(
-          (words) => describeConciergeError(failure, words).message,
-          problem.code,
-          'card_again',
-        );
       }
       if (problem.code === 'CONCIERGE_ALREADY_SUBMITTED') {
         setAlreadySentReference(problem.confirmationNumber);

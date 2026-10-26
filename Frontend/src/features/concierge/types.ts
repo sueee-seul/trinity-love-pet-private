@@ -272,7 +272,6 @@ export interface ConciergeStatusResponse {
   aiProcessing: AiProcessingDisclosure;
 }
 
-/** POST /api/concierge/card-setup: a card setup for the accepted quote. */
 /**
  * POST /api/concierge/details/read: what a spoken or typed description said, for the guest to
  * confirm before it fills the form. Null where it said nothing (Backend concierge.details-reader.ts).
@@ -285,22 +284,6 @@ export interface ConciergeDetailsDraft {
   emergencyContactNumber: string | null;
   pets: Array<{ name: string | null; breed: string | null }> | null;
   careNotes: string | null;
-}
-
-export interface ConciergeCardSetupRequest {
-  acceptedQuoteToken: string;
-  verificationToken?: string;
-  /** A first-time guest's email, whose new account the card is saved for. */
-  guestEmail?: string;
-}
-
-export interface ConciergeCardSetupResponse {
-  processor: ConciergeCardProcessor;
-  setupId: string;
-  clientSecret: string;
-  /** Browser key for the Stripe card form; null in the development fake. */
-  publishableKey: string | null;
-  testMode: boolean;
 }
 
 export interface ConciergeAcceptQuoteResponse {
@@ -329,8 +312,6 @@ export interface ConciergeCheckoutRequest {
   verificationToken?: string;
   /** A first-time guest's account, made with the booking (Backend contracts/concierge.contract.ts). */
   newAccount?: { email: string; password: string };
-  /** The confirmed card setup that guarantees the booking. */
-  cardSetupId: string;
   contact?: ConciergeContact;
   pets: ConciergeCheckoutPet[];
   stay: { dropOffTime: string; pickUpTime: string };
@@ -361,14 +342,13 @@ export interface ConciergeCheckoutResponse {
 }
 
 /**
- * What happened on the card (Backend concierge.contract.ts). `charged`: every pet was confirmed.
- * `held`: the full price is held until `reviewBy`, then the confirmed pets are charged.
+ * Nothing is paid online (Backend concierge.contract.ts): our manager decides by `reviewBy`, and
+ * the guest pays `amount` at the desk after the arrival health check.
  */
 export interface ConciergeCheckoutPayment {
-  status: 'charged' | 'held';
+  status: 'pay_at_desk';
   amount: number;
-  reviewBy: string | null;
-  testMode: boolean;
+  reviewBy: string;
 }
 
 /** Why a manager checks a pet's stay before it is confirmed (Backend booking.review.contract.ts). */

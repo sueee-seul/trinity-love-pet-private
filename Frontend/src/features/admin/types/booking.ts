@@ -127,3 +127,29 @@ export const BOOKING_TAB_TO_STATUS: Record<ManagerBookingTab, ManagerReviewStatu
   Refuse: 'refused',
   Cancelled: 'cancelled',
 };
+
+/**
+ * A parent's request to change a stay under way, waiting for a manager (since 2026-10-14 every such
+ * change is approved or refused first). Mirrors Backend contracts/booking.change.contract.ts.
+ */
+export interface ManagerStayChangeRequest {
+  id: string;
+  bookingId: string;
+  bookingPetId: string | null;
+  details:
+    | { kind: 'extend'; endDate: string }
+    | { kind: 'add_on'; serviceId: string; serviceName: string; date: string; quantity: number }
+    | { kind: 'times'; dropOffTime?: string; pickUpTime?: string }
+    | { kind: 'early_check_out' };
+  /** Paid at the desk at check-out if approved; null when it costs nothing. */
+  quotedAmount: number | null;
+  status: 'pending' | 'approved' | 'refused' | 'cancelled';
+  refusalReason: string | null;
+  /** One line, e.g. "extend Max's stay to 17 Oct 2026 ($55.00)". */
+  summary: string;
+  createdAt: string;
+  decidedAt: string | null;
+  reference: string;
+  ownerName: string;
+  petNames: string[];
+}

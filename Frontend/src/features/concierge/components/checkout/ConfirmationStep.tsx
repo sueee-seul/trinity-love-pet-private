@@ -38,8 +38,8 @@ const taskLinks = (
     : [];
 
 /**
- * The request is in. The page says plainly that it is a request waiting for review, that no email
- * went out and nothing was charged (the card is only saved), and hands over a plain receipt: the
+ * The request is in. The page says plainly that it is a request waiting for our manager and that
+ * nothing was paid (the guest pays at the desk), and hands over a plain receipt: the
  * reference (kept in this tab through a reload), each pet's review status, dates, times, the stay
  * and the add-ons its price covers, and the total. The boarding pass comes later, in My stays, once our manager approves a pet. Then
  * the page shows where each safety task is done and offers a calendar reminder that needs no email.
@@ -107,19 +107,14 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ copy, result
         times={draft ? { dropOffTime: draft.dropOffTime, pickUpTime: draft.pickUpTime } : null}
       />
       <p className="m-0 type-body font-semibold">
-        {result.payment.status === 'charged' || !result.payment.reviewBy
-          ? done.payment.charged(formatNzd(result.payment.amount))
-          : done.payment.held(
-              formatNzd(result.payment.amount),
-              `${formatShortDate(newZealandDateOf(result.payment.reviewBy), locale)} ${formatClockTime(
-                result.payment.reviewBy,
-                locale,
-              )}`,
-            )}
+        {done.payAtDesk(
+          formatNzd(result.payment.amount),
+          `${formatShortDate(newZealandDateOf(result.payment.reviewBy), locale)} ${formatClockTime(
+            result.payment.reviewBy,
+            locale,
+          )}`,
+        )}
       </p>
-      {result.payment.testMode && (
-        <p className="m-0 type-meta text-notice-secondary">{done.payment.testMode}</p>
-      )}
       {result.accountCreated && email && (
         <p className="m-0 type-body [overflow-wrap:anywhere]">{done.accountCreated(email)}</p>
       )}

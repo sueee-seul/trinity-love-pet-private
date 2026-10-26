@@ -4,8 +4,8 @@ import type { AnswerChoice } from './useVaccinationAnswer';
 
 // Words for the Vaccination information page, its answer form, the upload and the privacy notice.
 // The explaining sections that quote the Code of Welfare live in vaccinationRulesCopy.ts. The
-// Chinese reuses the concierge's terms (疫苗证明 for proof, 疫苗证书 for the certificate, 分开安置
-// for kept apart, 入住 for check-in) so the guest meets one set of words across the site.
+// Chinese reuses the concierge's terms (for vaccination proof, the certificate, kept apart and
+// check-in) so the guest meets one set of words across the site.
 
 /** One thing the certificate has to show, and whose rule it is (the Code's or Wagstay's own). */
 export interface CertificateRequirement {

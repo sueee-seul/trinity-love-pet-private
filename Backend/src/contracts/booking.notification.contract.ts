@@ -17,7 +17,12 @@ export const PARENT_BOOKING_NOTIFICATION_KINDS = [
   'booking_approved',
   'booking_refused',
   'booking_back_in_review',
-  // Changes the parent made while the pet was staying; each doubles as the receipt in the email.
+  // A change asked for while the pet is staying, and the manager's answer (since 2026-10-14 every
+  // such change waits for a manager). The approval goes to the chat; the bell gets the receipt below.
+  'booking_change_requested',
+  'booking_change_approved',
+  'booking_change_refused',
+  // Changes made while the pet was staying; each doubles as the receipt in the email.
   'booking_extended',
   'booking_add_on_booked',
   'booking_times_changed',
@@ -64,6 +69,9 @@ export const BOOKING_REVIEW_DUE = 'booking_review_due' as const;
 /** The parent changed a stay under way (extended it, booked an add-on, moved a time). */
 export const BOOKING_CHANGED_BY_GUEST = 'booking_changed_by_guest' as const;
 
+/** The parent asked to change a stay under way; a manager approves or refuses it. */
+export const BOOKING_CHANGE_REQUESTED = 'booking_change_requested' as const;
+
 /** A dose on the pet's record passed its window with no tick (Scenario 11: flag it at once). */
 export const BOOKING_MEDICATION_OVERDUE = 'booking_medication_overdue' as const;
 
@@ -82,6 +90,7 @@ export type BookingNotificationSetting =
   | typeof BOOKING_MOVED_BY_STAFF
   | typeof BOOKING_REVIEW_DUE
   | typeof BOOKING_CHANGED_BY_GUEST
+  | typeof BOOKING_CHANGE_REQUESTED
   | typeof BOOKING_MEDICATION_OVERDUE
   | typeof BOOKING_ESCALATION
   | typeof BOOKING_PARENT_ON_THE_WAY;

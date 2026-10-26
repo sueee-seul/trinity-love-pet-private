@@ -37,6 +37,8 @@ interface BookingStoreState {
   snapshotStatus: BookingSnapshotStatus;
   snapshotError: string | null;
   loadBookings: () => Promise<void>;
+  /** Reads the list again without showing a loading state; a failure keeps the list on screen. */
+  refreshBookings: () => Promise<void>;
   approveBooking: (bookingPetsUuid: string) => Promise<void>;
   refuseBooking: (bookingPetsUuid: string, reason: string) => Promise<void>;
   undoReview: (bookingPetsUuid: string) => Promise<void>;
@@ -71,6 +73,16 @@ export const useBookingStore = create<BookingStoreState>((set) => ({
     } catch (error) {
       console.error('Failed to load bookings', error);
       set({ snapshotStatus: 'error', snapshotError: 'Unable to load bookings. Please try again.' });
+    }
+  },
+
+  refreshBookings: async (): Promise<void> => {
+    try {
+      const bookings = await fetchManagerBookings();
+      set({ ...snapshotOf(bookings), snapshotStatus: 'ready', snapshotError: null });
+    } catch (error) {
+      // The next refresh tries again; the list already on screen stays.
+      console.error('Failed to refresh bookings', error);
     }
   },
 

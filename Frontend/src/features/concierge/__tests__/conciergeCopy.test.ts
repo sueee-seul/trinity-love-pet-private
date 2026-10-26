@@ -69,16 +69,17 @@ describe('the booking copy', () => {
 
   it('says a stay waiting for our manager is not booked yet', () => {
     expect(CONCIERGE_COPY.en.done.waitingNotBooked).toBe(
-      'A stay waiting for review is not booked yet. We will not take any money for a pet we cannot take.',
+      'A stay waiting for review is not booked yet. We will tell you here, in your notifications and in the chat, once our manager decides.',
     );
     expect(CONCIERGE_COPY.zh.done.waitingNotBooked).toBe(
-      '等待审核的住宿还没有预约成功。我们接收不了的宠物，不会收取任何费用。',
+      '等待审核的住宿还没有预约成功。经理决定后，我们会通过通知和聊天告诉你。',
     );
   });
 
-  // The owner's rule, told before sending: which stays our manager checks first.
+  // The owner's rule, told before sending: every request waits for our manager, and nothing is
+  // paid online (owner decision of 2026-10-14).
   it.each(LOCALES)(
-    'names every case our manager checks first before the guest sends (%s)',
+    'says before the guest sends that our manager checks every request and nothing is paid online (%s)',
     (locale) => {
       const { details } = CONCIERGE_COPY[locale];
       for (const reason of Object.values(details.review.reasons)) {
@@ -86,14 +87,13 @@ describe('the booking copy', () => {
       }
       const notice = details.requestNotice;
       const expected =
-        locale === 'en' ? ['medication', 'not booked yet'] : ['用药', '还没有预约成功'];
-      for (const part of expected) expect(notice).toContain(part);
-      // Only medication sends a stay to our manager (owner decision of 2026-10-05).
-      const dropped =
         locale === 'en'
-          ? ['behaviour or health', 'first time', '14 nights']
-          : ['行为或健康', '第一次来住', '14 晚'];
-      for (const part of dropped) expect(notice).not.toContain(part);
+          ? ['our manager checks each pet', 'Nothing is booked or paid']
+          : ['经理会审核每只宠物', '也不用付款'];
+      for (const part of expected) expect(notice).toContain(part);
+      expect(details.payAtDesk).toContain(
+        locale === 'en' ? 'Nothing is paid online' : '网上不付款',
+      );
     },
   );
 

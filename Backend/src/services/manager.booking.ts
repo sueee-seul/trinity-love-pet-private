@@ -30,6 +30,7 @@ import {
 import { assertRoomForStay } from './booking.capacity.js';
 import { rescheduleAsException } from './booking.guest-reschedule.js';
 import { chargeWhenDecided, isChargedUnsettled, refundChargedPet } from './booking.settlement.js';
+import { postBookingNoticeToChat } from './booking.chat-notices.js';
 import { sendBookingNoticeEmail } from './booking.transaction-emails.js';
 import { toConfirmationNumber } from './petparent.booking.js';
 import { getCardProcessor } from './payments/card-processor.factory.js';
@@ -171,6 +172,7 @@ export const approveBooking = async (
     },
   });
   void sendBookingNoticeEmail(emailNotice);
+  void postBookingNoticeToChat(emailNotice);
   await createTasksForBookingPet(bookingPetsUuid);
 };
 
@@ -232,6 +234,7 @@ export const refuseBooking = async (
     },
   });
   void sendBookingNoticeEmail(emailNotice);
+  void postBookingNoticeToChat(emailNotice);
   // A refused pet is not staying, so any care plan made when it was approved goes too.
   await deleteTasksForBookingPet(bookingPetsUuid);
 };

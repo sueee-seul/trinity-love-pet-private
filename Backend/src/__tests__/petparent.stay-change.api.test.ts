@@ -8,6 +8,12 @@ import { cancelByGuest, previewCancellation } from '../services/booking.guest-ch
 import { extendStay, previewExtension } from '../services/booking.guest-extend.js';
 import { previewReschedule, rescheduleByGuest } from '../services/booking.guest-reschedule.js';
 import { changeStayTimes } from '../services/booking.guest-times.js';
+import {
+  listMyStayChangeRequests,
+  requestAddOn,
+  requestExtension,
+  requestTimes,
+} from '../services/stay-change-requests.js';
 
 const OWNER = '00000000-0000-4000-8000-000000000101';
 const BOOKING = '00000000-0000-4000-8000-000000000601';
@@ -47,6 +53,13 @@ vi.mock('../services/booking.guest-addon.js', () => ({
   bookAddOn: vi.fn(async () => ({ amount: 15 })),
 }));
 
+vi.mock('../services/stay-change-requests.js', () => ({
+  requestExtension: vi.fn(async () => ({ id: 'r1', status: 'pending' })),
+  requestAddOn: vi.fn(async () => ({ id: 'r2', status: 'pending' })),
+  requestTimes: vi.fn(async () => ({ id: 'r3', status: 'pending' })),
+  listMyStayChangeRequests: vi.fn(async () => []),
+  withdrawStayChangeRequest: vi.fn(async () => undefined),
+}));
 vi.mock('../services/booking.guest-times.js', () => ({
   changeStayTimes: vi.fn(async () => ({ dropOffAt: 'x', pickUpAt: 'y' })),
 }));
@@ -120,7 +133,7 @@ describe('a guest changing their own stay', () => {
       .expect(400);
   });
 
-  it('prices and applies the changes to a stay under way for the signed-in owner', async () => {
+  it('prices the changes to a stay under way and sends each as a request for a manager', async () => {
     const PET = '00000000-0000-4000-8000-000000000701';
     const SERVICE = '00000000-0000-4000-8000-000000000801';
 
@@ -133,10 +146,12 @@ describe('a guest changing their own stay', () => {
       .post(`/api/petparent/bookings/${BOOKING}/extension`)
       .send({ endDate: '2026-12-17', expectedAmount: 240 })
       .expect(200);
-    expect(extendStay).toHaveBeenCalledWith(OWNER, BOOKING, {
+    expect(requestExtension).toHaveBeenCalledWith(OWNER, BOOKING, {
       endDate: '2026-12-17',
       expectedAmount: 240,
     });
+    // Nothing changes until a manager approves (stay-change-requests.ts).
+    expect(extendStay).not.toHaveBeenCalled();
 
     // Early pick-up was removed on 7 Oct 2026: the route is gone.
     await request(app)
@@ -151,7 +166,8 @@ describe('a guest changing their own stay', () => {
       .send({ serviceId: SERVICE, date: '2026-12-14', expectedAmount: 15 })
       .expect(200);
     // The quantity defaults to one.
-    expect(bookAddOn).toHaveBeenCalledWith(OWNER, BOOKING, PET, {
+    expect(bookAddOn).not.toHaveBeenCalled();
+    expect(requestAddOn).toHaveBeenCalledWith(OWNER, BOOKING, PET, {
       serviceId: SERVICE,
       date: '2026-12-14',
       quantity: 1,
@@ -162,7 +178,11 @@ describe('a guest changing their own stay', () => {
       .patch(`/api/petparent/bookings/${BOOKING}/pets/${PET}/times`)
       .send({ pickUpTime: '12:30' })
       .expect(200);
-    expect(changeStayTimes).toHaveBeenCalledWith(OWNER, BOOKING, PET, { pickUpTime: '12:30' });
+    expect(changeStayTimes).not.toHaveBeenCalled();
+    expect(requestTimes).toHaveBeenCalledWith(OWNER, BOOKING, PET, { pickUpTime: '12:30' });
+
+    await request(app).get('/api/petparent/stay-change-requests').expect(200);
+    expect(listMyStayChangeRequests).toHaveBeenCalledWith(OWNER);
   });
 
   it('refuses malformed in-stay changes before any service runs', async () => {

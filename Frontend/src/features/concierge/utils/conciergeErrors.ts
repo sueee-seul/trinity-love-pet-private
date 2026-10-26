@@ -102,15 +102,6 @@ const messageFor = (
       return errors.selectionInvalid;
     case 'CONCIERGE_FULLY_BOOKED':
       return errors.fullyBooked;
-    case 'CONCIERGE_CARD_NOT_READY':
-    case 'CONCIERGE_CARD_MISMATCH':
-      return errors.cardNotReady;
-    case 'CONCIERGE_CARD_DECLINED':
-      return errors.holdDeclined;
-    case 'CONCIERGE_CARD_AUTHENTICATION_REQUIRED':
-      return errors.cardAuthentication;
-    case 'CONCIERGE_PAYMENTS_NOT_CONFIGURED':
-      return errors.paymentsNotConfigured;
     case 'CONCIERGE_PET_COUNT_MISMATCH':
       return errors.petCountMismatch;
     case 'CONCIERGE_PET_NOT_OWNED':

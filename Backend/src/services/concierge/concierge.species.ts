@@ -1,7 +1,7 @@
 import type { ConciergeSpecies } from '../../contracts/concierge.contract.js';
 
 /**
- * Saved pets store species as free text ("Dog", "canine", "猫"). Only a clear dog or cat counts;
+ * Saved pets store species as free text ("Dog", "canine", or the Chinese word for cat). Only a clear dog or cat counts;
  * anything else is unknown, so a saved pet is refused only when it is clearly the other kind.
  */
 export const readSavedSpecies = (species: string | null | undefined): ConciergeSpecies | null => {

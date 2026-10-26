@@ -24,7 +24,6 @@ vi.mock('../api/conciergeApi', () => ({
     chat: vi.fn(),
     priceSelection: vi.fn(),
     acceptQuote: vi.fn(),
-    cardSetup: vi.fn(),
     checkout: vi.fn(),
     status: vi.fn(),
     rates: vi.fn(),
@@ -139,11 +138,9 @@ describe('the assistant’s plan', () => {
     expect(draft?.vetConsent).toBe(false);
   });
 
-  it('applies the recommended stay and opens the panel, but accepts nothing, when no card can be saved', async () => {
+  it('applies the recommended stay and opens the panel, but accepts nothing, when online booking is off', async () => {
     resetConciergeStatusCache();
-    vi.mocked(conciergeApi.status).mockResolvedValue(
-      statusResponse({ cardPayments: { processor: null, testMode: false } }),
-    );
+    vi.mocked(conciergeApi.status).mockResolvedValue(statusResponse({ capacityConfigured: false }));
     withStay();
     renderPage();
     await screen.findByText(/send your plan to our team/i);

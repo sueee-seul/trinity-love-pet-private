@@ -3,6 +3,7 @@ import { BookingApiError } from '../api/bookingApi';
 import { BookingCard } from '../components/booking/BookingCard';
 import { BookingTabs } from '../components/booking/BookingTabs';
 import { DeskAlerts } from '../components/booking/DeskAlerts';
+import { StayChangeRequestsPanel } from '../components/booking/StayChangeRequestsPanel';
 import { useBookingListData } from '../hooks/useBookingListData';
 import { useBookingStore } from '../store/bookingStore';
 import {
@@ -58,6 +59,7 @@ export function AdminBookingsPage({ staffDesk = false }: AdminBookingsPageProps)
   const [activeTab, setActiveTab] = useState<ManagerBookingTab>('Booking');
   const { bookings, loading, error } = useBookingListData();
   const approveBooking = useBookingStore((state) => state.approveBooking);
+  const refreshBookings = useBookingStore((state) => state.refreshBookings);
   const refuseBooking = useBookingStore((state) => state.refuseBooking);
   const undoReview = useBookingStore((state) => state.undoReview);
   const recordArrival = useBookingStore((state) => state.recordArrival);
@@ -198,6 +200,7 @@ export function AdminBookingsPage({ staffDesk = false }: AdminBookingsPageProps)
         }
       />
       <DeskAlerts bookings={bookings} now={now} />
+      <StayChangeRequestsPanel canDecide={!staffDesk} onDecided={() => void refreshBookings()} />
       <BookingTabs activeTab={activeTab} onTabChange={setActiveTab} counts={counts} />
 
       {notice && (

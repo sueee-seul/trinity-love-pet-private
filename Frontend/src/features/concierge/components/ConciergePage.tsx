@@ -114,11 +114,10 @@ export const ConciergePage: React.FC<ConciergePageProps> = ({ variant }) => {
   const [signInOpen, setSignInOpen] = useState(false);
   const copy = CONCIERGE_COPY[locale];
   const standalone = variant === 'standalone';
-  // Booking online needs a saved card and a room count. Without either nobody can book, so
-  // continuing hands the plan to the team instead, said up front rather than after the last
-  // question. Unknown (not read yet) never counts as impossible.
+  // Booking online needs a room count. Without it nobody can book, so continuing hands the plan
+  // to the team instead, said up front rather than after the last question. Unknown (not read
+  // yet) never counts as impossible.
   const handoff = !status.onlineBooking;
-  const cardsOff = status.cardPayments?.processor === null;
 
   // There is no sign-in step any more: a first-time guest makes their account on the details step.
   // A plan saved on the old step (?step=verify) opens the details instead.
@@ -284,7 +283,7 @@ export const ConciergePage: React.FC<ConciergePageProps> = ({ variant }) => {
         <RatesStrip copy={copy} onHeroBand={standalone} />
         {handoff && (
           <p className="m-0 max-w-[70ch] rounded-2xl border border-control-border bg-surface-card px-4 py-3 type-body">
-            {cardsOff ? copy.handoffNotice : copy.bookingOffNotice}
+            {copy.bookingOffNotice}
           </p>
         )}
       </div>

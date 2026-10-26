@@ -8,10 +8,8 @@ import { checkoutConciergeBooking } from '../services/concierge/concierge.checko
 import { signAcceptedQuote, type SignedQuote } from '../services/concierge/concierge.tokens.js';
 import * as bookingRepository from '../repositories/petparent.booking.repository.js';
 import * as conciergeRepository from '../repositories/concierge.repository.js';
-import { fakeCardSetupFor, TEST_SIGNING_SECRET } from './fixtures/concierge.fixtures.js';
+import { TEST_SIGNING_SECRET } from './fixtures/concierge.fixtures.js';
 import * as bookingCapacity from '../services/booking.capacity.js';
-import { FakeCardProcessor } from '../services/payments/fake-card-processor.js';
-import { setCardProcessorForTests } from '../services/payments/card-processor.factory.js';
 
 /**
  * The booking page links a pet typed in the chat to the saved pet with the same name and kind,
@@ -73,7 +71,6 @@ const savedMaxAndNewLuna = async (): Promise<ConciergeCheckoutRequest> => {
   const acceptedQuoteToken = await signAcceptedQuote(quote, new Date(Date.now() - 60_000));
   return {
     acceptedQuoteToken,
-    cardSetupId: await fakeCardSetupFor(acceptedQuoteToken),
     pets: [{ existingPetId: SAVED_MAX_ID }, { newPet: { name: 'Luna' } }],
     stay: { dropOffTime: '09:00', pickUpTime: '17:00' },
     agreement: { termsAccepted: true, vetConsentAccepted: true, termsVersionLabel: 'terms-v3' },
@@ -84,7 +81,6 @@ describe('checkout with a saved pet', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.CONCIERGE_SIGNING_SECRET = TEST_SIGNING_SECRET;
-    setCardProcessorForTests(new FakeCardProcessor());
     vi.mocked(bookingRepository.getServiceCatalogByIds).mockResolvedValue(
       new Map([
         [

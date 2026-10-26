@@ -13,7 +13,7 @@ import type {
   ConciergeNeeds,
 } from '../types';
 import { addDays, todayInNewZealand } from '../utils/format';
-import { catalogue, combos, fakeCardSetup, roomierCombo, statusResponse } from './fixtures';
+import { catalogue, combos, roomierCombo, statusResponse } from './fixtures';
 
 export { acceptedFor, catalogue, combos, quoteFor, roomierCombo, simpleCombo } from './fixtures';
 
@@ -77,13 +77,13 @@ export const sent: ConciergeCheckoutResponse = {
   currency: 'NZD',
   accountCreated: false,
   safetyTasks: ['vaccination_certificate'],
-  // The stay waits for our manager: its $230 is held until the review deadline.
-  payment: { status: 'held', amount: 230, reviewBy: '2026-12-02T02:00:00.000Z', testMode: true },
+  // The stay waits for our manager; nothing is paid online, $230 is paid at the desk.
+  payment: { status: 'pay_at_desk', amount: 230, reviewBy: '2026-12-02T02:00:00.000Z' },
 };
 
 /**
  * A clean plan in English for a guest (the app shell's session check done), the "from" price
- * known and the card fake on. A test that needs a parent signs one in after this.
+ * known. A test that needs a parent signs one in after this.
  */
 export const resetPage = (): void => {
   useAuthStore.setState({ user: null, isAuthenticated: false, isHydrating: false });
@@ -93,8 +93,6 @@ export const resetPage = (): void => {
   vi.mocked(conciergeApi.status).mockResolvedValue(statusResponse());
   // A signed-in parent's pets and last stay are asked for on arrival; by default there are none.
   vi.mocked(conciergeApi.myPets).mockResolvedValue([]);
-  // The details step saves a card: the development fake confirms it without a card form.
-  vi.mocked(conciergeApi.cardSetup).mockResolvedValue(fakeCardSetup());
   vi.mocked(conciergeApi.rates).mockResolvedValue({
     fromTotal: 45,
     nights: 1,

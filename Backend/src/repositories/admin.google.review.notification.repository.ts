@@ -6,6 +6,7 @@ import {
 } from '../contracts/google.review.notification.contract.js';
 import {
   BOOKING_NOTIFICATION_CATEGORY,
+  BOOKING_CHANGE_REQUESTED,
   BOOKING_REVIEW_DUE,
   MANAGER_BOOKING_REQUEST_NOTIFICATION_TYPE,
 } from '../contracts/booking.notification.contract.js';
@@ -17,6 +18,7 @@ import {
 export const BELL_BOOKING_SETTINGS: readonly string[] = [
   MANAGER_BOOKING_REQUEST_NOTIFICATION_TYPE,
   BOOKING_REVIEW_DUE,
+  BOOKING_CHANGE_REQUESTED,
 ];
 
 export interface GoogleReviewNotificationCursor {

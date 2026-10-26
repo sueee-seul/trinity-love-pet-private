@@ -8,7 +8,11 @@ export const PARENT_NOTIFICATION_KINDS = [
   'booking_approved',
   'booking_refused',
   'booking_back_in_review',
-  // Changes the parent made while the pet was staying; each doubles as the receipt in the email.
+  // A change asked for while the pet is staying, and our manager's answer (approvals go to the chat).
+  'booking_change_requested',
+  'booking_change_approved',
+  'booking_change_refused',
+  // Changes made while the pet was staying; each doubles as the receipt in the email.
   'booking_extended',
   'booking_picked_up_early',
   'booking_add_on_booked',

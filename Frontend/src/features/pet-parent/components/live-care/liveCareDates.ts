@@ -1,7 +1,7 @@
 import type { PortalLocale } from '../../i18n/portalLocale';
 import { formatCompactRange, formatDay } from '../../utils/home';
 
-// Chinese days are written "9月27日". English keeps the homepage's own "27 Sep", because Intl's
+// Chinese days are written month first, with the Chinese words for month and day. English keeps the homepage's own "27 Sep", because Intl's
 // en-NZ month reads "Sept" in newer ICU.
 const CHINESE_DAY_FORMAT = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric' });
 
@@ -26,7 +26,7 @@ const AUCKLAND_TIME_FORMATS: Record<PortalLocale, Intl.DateTimeFormat> = {
   }),
 };
 
-/** "8:05 am" or "上午8:05": the Auckland wall time of an ISO instant. */
+/** "8:05 am", or the Chinese "morning 8:05": the Auckland wall time of an ISO instant. */
 export function formatAucklandTime(iso: string, locale: PortalLocale = 'en'): string {
   return AUCKLAND_TIME_FORMATS[locale].format(new Date(iso));
 }
@@ -64,19 +64,19 @@ export function localIsoDate(now: Date): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-/** "27 Sep" or "9月27日", from a 'YYYY-MM-DD' day. */
+/** "27 Sep", or the Chinese month-day, from a 'YYYY-MM-DD' day. */
 export function formatCareDay(isoDate: string, locale: PortalLocale = 'en'): string {
   const day = toLocalDate(isoDate);
   return locale === 'zh' ? CHINESE_DAY_FORMAT.format(day) : formatDay(day.toISOString());
 }
 
-/** "Mon" or "周一", from a 'YYYY-MM-DD' day. */
+/** "Mon", or the Chinese weekday, from a 'YYYY-MM-DD' day. */
 export function formatCareWeekday(isoDate: string, locale: PortalLocale = 'en'): string {
   return WEEKDAY_FORMATS[locale].format(toLocalDate(isoDate));
 }
 
 /** "27 Sep to 2 Oct", or "12 to 16 Sep" within one month, from two 'YYYY-MM-DD' days. Written
- * the same way as the stay dates on the homepage. In Chinese: "9月27日至10月2日", "9月12日至16日". */
+ * the same way as the stay dates on the homepage. In Chinese: "27 Sep to 2 Oct", "12 to 16 Sep", written month first. */
 export function formatStayDates(
   dropOffDate: string,
   pickUpDate: string,

@@ -224,7 +224,7 @@ describe('the profile forms in Chinese', () => {
       '如果在这里填写了别人的信息，请告知对方：我们会保存他们的姓名和电话，用于就你的宠物联系他们。',
     );
     await user.type(screen.getByRole('textbox', { name: '宠物名字' }), 'Mochi');
-    // The option reads 猫咪, but the value saved is still the enum the API stores.
+    // The option reads "kitty" in Chinese, but the value saved is still the enum the API stores.
     await user.selectOptions(screen.getByRole('combobox', { name: '种类' }), '猫咪');
     await user.selectOptions(screen.getByRole('combobox', { name: '性别' }), '母');
     await user.click(screen.getByRole('button', { name: '添加宠物' }));

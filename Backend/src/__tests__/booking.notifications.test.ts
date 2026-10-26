@@ -4,6 +4,9 @@ import type { ReviewedBookingPet } from '../repositories/manager.booking.review.
 const emails = vi.hoisted(() => ({ sendBookingNoticeEmail: vi.fn() }));
 vi.mock('../services/booking.transaction-emails.js', () => emails);
 
+const chat = vi.hoisted(() => ({ postBookingNoticeToChat: vi.fn() }));
+vi.mock('../services/booking.chat-notices.js', () => chat);
+
 const repository = vi.hoisted(() => ({
   findBookingRequestSubject: vi.fn(),
   recordParentNotice: vi.fn(),
@@ -57,7 +60,7 @@ afterEach(() => {
   consoleError.mockRestore();
 });
 
-const CONFIRMED = [
+const PLAIN = [
   { name: 'Max', reasons: [] },
   { name: 'Bella', reasons: [] },
 ];
@@ -70,20 +73,21 @@ describe('notifyBookingPlaced (checkout)', () => {
   it('does not keep the guest waiting on the mail provider', async () => {
     emails.sendBookingNoticeEmail.mockReturnValueOnce(new Promise(() => undefined));
 
-    await expect(notifyBookingPlaced(BOOKING_ID, CONFIRMED)).resolves.toBeUndefined();
+    await expect(notifyBookingPlaced(BOOKING_ID, PLAIN)).resolves.toBeUndefined();
     expect(emails.sendBookingNoticeEmail).toHaveBeenCalledTimes(1);
   });
 
-  it('tells the parent a booking confirmed at checkout is confirmed, and no manager', async () => {
-    await notifyBookingPlaced(BOOKING_ID, CONFIRMED);
+  it('tells the parent the request waits for our manager, in the bell, by email and in the chat', async () => {
+    await notifyBookingPlaced(BOOKING_ID, PLAIN);
 
     const notice = {
       ownerId: OWNER_ID,
       bookingId: BOOKING_ID,
-      kind: 'booking_approved',
+      kind: 'booking_request_received',
       body:
-        'Your booking PB-AAAAAA for Max and Bella, 12 to 15 Oct 2026, is confirmed. ' +
-        'Your boarding pass is in My stays.',
+        'We got your request PB-AAAAAA for Max and Bella, 12 to 15 Oct 2026. ' +
+        'Nothing is booked yet: our manager will check it and let you know here once it is approved or declined. ' +
+        'You pay at the desk on arrival, after a quick health check.',
     };
     expect(repository.findBookingRequestSubject).toHaveBeenCalledWith(BOOKING_ID);
     expect(repository.recordParentNotice).toHaveBeenCalledWith(notice);
@@ -92,29 +96,15 @@ describe('notifyBookingPlaced (checkout)', () => {
       ...notice,
       withAgreedTerms: true,
     });
-    expect(repository.recordManagerRequestNotices).not.toHaveBeenCalled();
+    expect(chat.postBookingNoticeToChat).toHaveBeenCalledWith(notice);
   });
 
-  it('tells the parent which stay a manager checks first, and why', async () => {
-    await notifyBookingPlaced(BOOKING_ID, BELLA_WAITS);
-
-    expect(repository.recordParentNotice).toHaveBeenCalledWith({
-      ownerId: OWNER_ID,
-      bookingId: BOOKING_ID,
-      kind: 'booking_request_received',
-      body:
-        'We got your request PB-AAAAAA, 12 to 15 Oct 2026. Max is confirmed. ' +
-        'Our manager checks Bella (takes medication) before confirming. ' +
-        'We hold the full price on your card, and charge the confirmed pets once our manager has decided.',
-    });
-  });
-
-  it('asks every active manager to review only the waiting stays', async () => {
+  it('asks every active manager to review every pet, flagging what to look at', async () => {
     await notifyBookingPlaced(BOOKING_ID, BELLA_WAITS);
 
     expect(repository.recordManagerRequestNotices).toHaveBeenCalledWith({
       bookingId: BOOKING_ID,
-      body: 'Please review Bella (takes medication), 12 to 15 Oct 2026. Reference PB-AAAAAA.',
+      body: 'Please review Max and Bella (takes medication), 12 to 15 Oct 2026. Reference PB-AAAAAA.',
     });
   });
 
@@ -139,10 +129,10 @@ describe('notifyBookingPlaced (checkout)', () => {
 
   it('writes nothing, and does not throw, when the booking cannot be read', async () => {
     repository.findBookingRequestSubject.mockRejectedValueOnce(new Error('db down'));
-    await expect(notifyBookingPlaced(BOOKING_ID, CONFIRMED)).resolves.toBeUndefined();
+    await expect(notifyBookingPlaced(BOOKING_ID, PLAIN)).resolves.toBeUndefined();
 
     repository.findBookingRequestSubject.mockResolvedValueOnce(null);
-    await expect(notifyBookingPlaced(BOOKING_ID, CONFIRMED)).resolves.toBeUndefined();
+    await expect(notifyBookingPlaced(BOOKING_ID, PLAIN)).resolves.toBeUndefined();
 
     expect(emails.sendBookingNoticeEmail).not.toHaveBeenCalled();
     expect(repository.recordParentNotice).not.toHaveBeenCalled();
@@ -151,14 +141,14 @@ describe('notifyBookingPlaced (checkout)', () => {
 });
 
 describe('notifyBookingDatesChanged (a guest moved their stay)', () => {
-  it('tells the parent the new dates wait for review and nothing is held, in the bell and by email', async () => {
+  it('tells the parent the new dates wait for review, in the bell and by email', async () => {
     await notifyBookingDatesChanged(BOOKING_ID);
 
     const notice = {
       ownerId: OWNER_ID,
       bookingId: BOOKING_ID,
       kind: 'booking_back_in_review',
-      body: "You moved Max and Bella's stay to 12 to 15 Oct 2026. Our manager will review the new dates. Nothing is held on your card until they approve.",
+      body: "You moved Max and Bella's stay to 12 to 15 Oct 2026. Our manager will review the new dates. Nothing is booked until they approve.",
     };
     expect(repository.recordParentNotice).toHaveBeenCalledWith(notice);
     expect(emails.sendBookingNoticeEmail).toHaveBeenCalledWith(notice);
@@ -188,7 +178,9 @@ describe('decision notices', () => {
       ownerId: OWNER_ID,
       bookingId: BOOKING_ID,
       kind: 'booking_approved',
-      body: "Max's stay, 12 to 15 Oct 2026, is confirmed. Your boarding pass is in My stays.",
+      body:
+        "Max's stay, 12 to 15 Oct 2026, is approved. Please bring Max on Mon 12 Oct at 9:00 am. " +
+        'We do a quick health check at the desk, then you pay there. Your boarding pass is in My stays.',
     });
     expect(composeApprovedNotice(reviewed({ previousStatus: 'refused' }))?.kind).toBe(
       'booking_approved',

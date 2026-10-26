@@ -13,20 +13,16 @@ import { AcceptanceRegistry } from '../services/concierge/concierge.acceptance-r
 import {
   signAcceptedQuote,
   signVerifiedEmail,
-  verifyAcceptedQuote,
   type SignedQuote,
 } from '../services/concierge/concierge.tokens.js';
-import { FakeCardProcessor } from '../services/payments/fake-card-processor.js';
-import { setCardProcessorForTests } from '../services/payments/card-processor.factory.js';
 import * as bookingRepository from '../repositories/petparent.booking.repository.js';
 import * as conciergeRepository from '../repositories/concierge.repository.js';
 import * as authRepository from '../repositories/auth.repository.js';
 import * as bookingCapacity from '../services/booking.capacity.js';
-import { fakeCardSetupFor, TEST_SIGNING_SECRET } from './fixtures/concierge.fixtures.js';
+import { TEST_SIGNING_SECRET } from './fixtures/concierge.fixtures.js';
 import { OWNER_SAID_NEEDS_MEDICATION_NOTE } from '../common/utils/booking-care-notes.js';
 import { notifyBookingPlaced } from '../services/booking.notifications.js';
 import { createTasksForBookingPet } from '../services/task.fromBooking.service.js';
-import * as checkoutHold from '../services/concierge/concierge.checkout-hold.js';
 
 /** Relative to now: accepted-quote tokens expire after an hour, so a fixed date would rot. */
 const ACCEPTED_AT = new Date(Date.now() - 60_000);
@@ -57,16 +53,6 @@ vi.mock('../services/task.fromBooking.service.js', () => ({
 }));
 vi.mock('../repositories/auth.repository.js', () => ({ findUserByEmail: vi.fn() }));
 vi.mock('../services/booking.notifications.js', () => ({ notifyBookingPlaced: vi.fn() }));
-// The hold is placed for real on the fake card; charging a confirmed request locks the booking in
-// the database, so that step is replaced here (concierge.checkout-hold.test.ts covers it).
-vi.mock('../services/concierge/concierge.checkout-hold.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof checkoutHold>();
-  return {
-    ...actual,
-    chargeConfirmedRequest: vi.fn(async () => 'charged'),
-    releaseUnusedHold: vi.fn(),
-  };
-});
 vi.mock('../services/booking.capacity.js', async (importOriginal) => {
   const actual = await importOriginal<typeof bookingCapacity>();
   return { ...actual, findFullNights: vi.fn(), assertRoomForStay: vi.fn() };
@@ -118,7 +104,6 @@ const contact = {
   phone: '021 555 0199',
 };
 
-/** The fake processor's setup id carries the acceptance it was made for. */
 const buildRequest = async (
   overrides: Partial<ConciergeCheckoutRequest> = {},
 ): Promise<ConciergeCheckoutRequest> => {
@@ -127,7 +112,6 @@ const buildRequest = async (
   return {
     acceptedQuoteToken,
     verificationToken: await signVerifiedEmail('ava@example.test'),
-    cardSetupId: await fakeCardSetupFor(acceptedQuoteToken),
     contact,
     pets: [{ newPet: { name: 'Biscuit', breed: 'Labrador' } }],
     stay: { dropOffTime: '09:00', pickUpTime: '17:00' },
@@ -164,12 +148,10 @@ describe('checkoutConciergeBooking', () => {
     vi.mocked(conciergeRepository.findPetNames).mockResolvedValue(new Map([[PET_ID, 'Biscuit']]));
     vi.mocked(bookingCapacity.findFullNights).mockResolvedValue([]);
     vi.mocked(bookingCapacity.assertRoomForStay).mockResolvedValue(undefined);
-    setCardProcessorForTests(new FakeCardProcessor());
   });
 
   afterEach(() => {
     process.env.CONCIERGE_SIGNING_SECRET = originalSecret;
-    setCardProcessorForTests(undefined);
     vi.clearAllMocks();
     vi.restoreAllMocks();
   });
@@ -185,11 +167,10 @@ describe('checkoutConciergeBooking', () => {
     expect(bookingRepository.createBooking).not.toHaveBeenCalled();
   });
 
-  it('creates an account and records a request at the quoted price, with its price held', async () => {
+  it('creates an account and records a request at the quoted price, with nothing paid online', async () => {
     const request = await buildRequest({
       acceptedQuoteToken: await signAcceptedQuote(medicatedQuote, ACCEPTED_AT),
     });
-    const { acceptanceId } = await verifyAcceptedQuote(request.acceptedQuoteToken);
     const result = await checkoutConciergeBooking(request, {}, { now: () => WELL_AHEAD });
 
     expect(conciergeRepository.createOwnerAndPets).toHaveBeenCalledWith({
@@ -198,23 +179,13 @@ describe('checkoutConciergeBooking', () => {
       pets: [{ name: 'Biscuit', breed: 'Labrador', species: 'dog' }],
     });
     const booking = vi.mocked(bookingRepository.createBooking).mock.calls[0]?.[0];
-    // The full price is held before the request is recorded; a waiting pet is not charged yet.
-    expect(booking?.payment).toEqual({
-      amount: 204,
-      currency: 'NZD',
-      processor: 'fake',
-      processorPaymentMethodId: `fake_pm_${acceptanceId}`,
-      status: 'authorized',
-      processorPaymentIntentId: `fake_pi_request-hold-${acceptanceId}`,
-    });
-    // Our manager has 24 hours to decide.
+    // No payment row: the guest pays at the desk. Our manager has 24 hours to decide.
+    expect(booking?.payment).toBeUndefined();
     expect(result.payment).toEqual({
-      status: 'held',
+      status: 'pay_at_desk',
       amount: 204,
       reviewBy: '2026-10-02T02:00:00.000Z',
-      testMode: true,
     });
-    expect(checkoutHold.chargeConfirmedRequest).not.toHaveBeenCalled();
     // The terms are agreed when the request is sent, after the package was chosen, so the
     // agreement carries the send time rather than the quote's acceptance time.
     expect(booking?.agreement.fullName).toBe('Ava Mitchell');
@@ -223,7 +194,7 @@ describe('checkoutConciergeBooking', () => {
     // 9am and 5pm in Auckland (NZDT, UTC+13 in October), whatever the server's own time zone.
     expect(booking?.pets[0]?.dropOffAt.toISOString()).toBe('2026-10-11T20:00:00.000Z');
     expect(booking?.pets[0]?.pickUpAt.toISOString()).toBe('2026-10-15T04:00:00.000Z');
-    // A pet on medication waits for a manager: the booking row carries the saved card, the pet is pending.
+    // Every pet waits for a manager; medication is flagged for them.
     expect(booking?.recording).toEqual({ bookingStatus: 'confirmed', petReviewStatus: 'pending' });
     expect(booking?.pets[0]?.reviewStatus).toBe('pending');
     expect(result).toMatchObject({
@@ -240,7 +211,7 @@ describe('checkoutConciergeBooking', () => {
     expect(createTasksForBookingPet).not.toHaveBeenCalled();
   });
 
-  it('confirms a new pet without medication at once and gives it a care plan', async () => {
+  it('keeps a pet without medication waiting for our manager too, with no care plan yet', async () => {
     vi.mocked(conciergeRepository.findBookingPetIds).mockResolvedValue(['booking-pet-1']);
 
     const result = await checkoutConciergeBooking(
@@ -250,39 +221,17 @@ describe('checkoutConciergeBooking', () => {
     );
 
     const booking = vi.mocked(bookingRepository.createBooking).mock.calls[0]?.[0];
-    expect(booking?.pets[0]?.reviewStatus).toBe('approved');
+    expect(booking?.pets[0]?.reviewStatus).toBe('pending');
     expect(result).toMatchObject({
-      status: 'confirmed',
-      pets: [{ name: 'Biscuit', status: 'confirmed', reviewReasons: [] }],
-      // Nobody waits for a manager, so the price is charged at once.
-      payment: { status: 'charged', amount: 204, reviewBy: null },
+      status: 'awaiting_manager_approval',
+      pets: [{ name: 'Biscuit', status: 'waiting_for_review', reviewReasons: [] }],
+      payment: { status: 'pay_at_desk', amount: 204 },
     });
-    expect(checkoutHold.chargeConfirmedRequest).toHaveBeenCalledWith(BOOKING_ID, expect.anything());
-    expect(createTasksForBookingPet).toHaveBeenCalledWith('booking-pet-1');
+    // Care tasks come when our manager approves (manager.booking.ts).
+    expect(createTasksForBookingPet).not.toHaveBeenCalled();
     expect(notifyBookingPlaced).toHaveBeenCalledWith(BOOKING_ID, [
       { name: 'Biscuit', reasons: [] },
     ]);
-    // The care plan exists before the parent is told the stay is confirmed.
-    const planned = vi.mocked(createTasksForBookingPet).mock.invocationCallOrder[0] ?? 0;
-    const told = vi.mocked(notifyBookingPlaced).mock.invocationCallOrder[0] ?? 0;
-    expect(told).toBeGreaterThan(planned);
-  });
-
-  it('keeps the booking confirmed when the care plan cannot be made', async () => {
-    vi.mocked(conciergeRepository.findBookingPetIds).mockResolvedValue(['booking-pet-1']);
-    vi.mocked(createTasksForBookingPet).mockRejectedValueOnce(new Error('tasks down'));
-    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-
-    const result = await checkoutConciergeBooking(
-      await buildRequest(),
-      {},
-      { now: () => WELL_AHEAD },
-    );
-
-    expect(result.status).toBe('confirmed');
-    expect(notifyBookingPlaced).toHaveBeenCalledTimes(1);
-    expect(JSON.stringify(errorLog.mock.calls)).not.toContain('Biscuit');
-    errorLog.mockRestore();
   });
 
   it('gives our manager 24 hours for a request made two days before drop-off', async () => {
@@ -295,54 +244,10 @@ describe('checkoutConciergeBooking', () => {
     );
 
     // Drop-off is 46 hours away, so the full 24 hours fit (the drop-off cap is in fee-policy).
-    expect(result.payment).toMatchObject({ status: 'held', reviewBy: '2026-10-10T22:00:00.000Z' });
-  });
-
-  it('books nothing when the card is declined, and creates no account', async () => {
-    const processor = new FakeCardProcessor();
-    vi.spyOn(processor, 'placeHold').mockResolvedValue({
-      status: 'failed',
-      paymentIntentId: 'fake_pi_declined',
-      reason: 'declined',
+    expect(result.payment).toMatchObject({
+      status: 'pay_at_desk',
+      reviewBy: '2026-10-10T22:00:00.000Z',
     });
-
-    await expect(
-      checkoutConciergeBooking(await buildRequest(), {}, { cardProcessor: processor }),
-    ).rejects.toMatchObject({ code: 'CONCIERGE_CARD_DECLINED', statusCode: 402 });
-    expect(conciergeRepository.createOwnerAndPets).not.toHaveBeenCalled();
-    expect(bookingRepository.createBooking).not.toHaveBeenCalled();
-  });
-
-  it('lets the hold go when the request cannot be recorded', async () => {
-    vi.mocked(bookingRepository.createBooking).mockRejectedValueOnce(new Error('write failed'));
-    const request = await buildRequest();
-    const { acceptanceId } = await verifyAcceptedQuote(request.acceptedQuoteToken);
-
-    await expect(checkoutConciergeBooking(request, {})).rejects.toThrow('write failed');
-    expect(checkoutHold.releaseUnusedHold).toHaveBeenCalledWith(
-      expect.anything(),
-      `fake_pi_request-hold-${acceptanceId}`,
-    );
-  });
-
-  it('refuses a card saved for a different booking', async () => {
-    await expect(
-      checkoutConciergeBooking(
-        await buildRequest({ cardSetupId: 'fake_seti_another-booking' }),
-        {},
-      ),
-    ).rejects.toMatchObject({ code: 'CONCIERGE_CARD_MISMATCH', statusCode: 409 });
-    expect(conciergeRepository.createOwnerAndPets).not.toHaveBeenCalled();
-  });
-
-  it('refuses to book when card payments are not set up', async () => {
-    setCardProcessorForTests(null);
-
-    await expect(checkoutConciergeBooking(await buildRequest(), {})).rejects.toMatchObject({
-      code: 'CONCIERGE_PAYMENTS_NOT_CONFIGURED',
-      statusCode: 503,
-    });
-    expect(conciergeRepository.createOwnerAndPets).not.toHaveBeenCalled();
   });
 
   it('refuses a full night before creating an account', async () => {
@@ -405,7 +310,6 @@ describe('checkoutConciergeBooking', () => {
 
     const booking = vi.mocked(bookingRepository.createBooking).mock.calls[0]?.[0];
     expect(result.total).toBe(204);
-    expect(booking?.payment.amount).toBe(204);
     expect(booking?.pets[0]?.services.map((service) => service.priceAtBooking)).toEqual([60, 8]);
   });
 
@@ -589,11 +493,6 @@ describe('checkoutConciergeBooking safeguards', () => {
     vi.mocked(authRepository.findUserByEmail).mockResolvedValue(null);
     vi.mocked(bookingCapacity.findFullNights).mockResolvedValue([]);
     vi.mocked(bookingCapacity.assertRoomForStay).mockResolvedValue(undefined);
-    setCardProcessorForTests(new FakeCardProcessor());
-  });
-
-  afterEach(() => {
-    setCardProcessorForTests(undefined);
   });
 
   it('passes the quoted size and medication to staff in fields they already read', async () => {

@@ -11,7 +11,6 @@ import {
 } from '../contracts/google.review.notification.contract.js';
 import {
   BOOKING_NOTIFICATION_CATEGORY,
-  BOOKING_REVIEW_DUE,
   MANAGER_BOOKING_REQUEST_NOTIFICATION_TYPE,
   type BookingRequestNotification,
 } from '../contracts/booking.notification.contract.js';
@@ -26,7 +25,7 @@ import {
 } from '../repositories/admin.google.review.notification.repository.js';
 import {
   MANAGER_BOOKING_REQUEST_TITLE,
-  MANAGER_REVIEW_DUE_TITLE,
+  MANAGER_BOOKING_TITLES,
 } from './booking.notification.messages.js';
 
 const NOTIFICATION_PLACE_SLUG = 'PetHouse';
@@ -93,10 +92,7 @@ const toBookingRequestNotification = (
   id: record.uuid,
   type: MANAGER_BOOKING_REQUEST_NOTIFICATION_TYPE,
   category: BOOKING_NOTIFICATION_CATEGORY,
-  title:
-    record.notification_setting === BOOKING_REVIEW_DUE
-      ? MANAGER_REVIEW_DUE_TITLE
-      : MANAGER_BOOKING_REQUEST_TITLE,
+  title: MANAGER_BOOKING_TITLES[record.notification_setting] ?? MANAGER_BOOKING_REQUEST_TITLE,
   body: record.summary_content ?? '',
   createdAt: record.created_at.toISOString(),
   readAt: record.read_at?.toISOString() ?? null,

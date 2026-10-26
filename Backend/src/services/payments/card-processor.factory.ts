@@ -1,27 +1,19 @@
-import Stripe from 'stripe';
 import { AppError } from '../../common/middlewares/error.middleware.js';
 import type { CardProcessor } from './card-processor.js';
 import { FakeCardProcessor } from './fake-card-processor.js';
-import { StripeCardProcessor } from './stripe-card-processor.js';
 
 /**
- * Chooses the card processor from the environment:
- * - STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY set: Stripe (test keys move no real money).
- * - CONCIERGE_PAYMENT_MODE=fake outside production: the fake processor, for development before
- *   the owner has Stripe keys.
- * - Otherwise none, and booking online refuses loudly rather than pretend a card was held.
+ * Nothing is paid online (owner decision 2026-10-14), so there is no real card processor: Stripe
+ * was removed. What remains serves the bookings made before that, whose money code still runs
+ * when a booking has a payment row:
+ * - CONCIERGE_PAYMENT_MODE=fake outside production: the fake processor, for development and tests.
+ * - Otherwise none: every money step on such a booking is skipped or refused loudly.
  */
-
 export const FAKE_PAYMENT_MODE = 'fake';
 
 export const createCardProcessor = (
   environment: Record<string, string | undefined> = process.env,
 ): CardProcessor | null => {
-  const secretKey = environment.STRIPE_SECRET_KEY?.trim();
-  const publishableKey = environment.STRIPE_PUBLISHABLE_KEY?.trim();
-  if (secretKey && publishableKey) {
-    return new StripeCardProcessor(new Stripe(secretKey), publishableKey);
-  }
   if (
     environment.CONCIERGE_PAYMENT_MODE === FAKE_PAYMENT_MODE &&
     environment.NODE_ENV !== 'production'

@@ -116,7 +116,7 @@ export const STAY_CHANGES_COPY: PortalCopy<StayChangesCopy> = {
       summary: (start, end, nights, total) => `${start} to ${end}, ${nights}. New total: ${total}.`,
       usesFreeChange: 'This uses your one free change. ',
       holdReleased:
-        'The old hold is released. Your new dates return to manager review; nothing is held until approved again.',
+        'Your new dates go back to our manager for approval. Nothing is paid online; you pay at the desk on arrival.',
       paidChange:
         'We hold the new price on your card first, then release or refund the old payment. Confirmed pets stay confirmed.',
       keepDates: 'Keep my dates',
@@ -191,7 +191,7 @@ export const STAY_CHANGES_COPY: PortalCopy<StayChangesCopy> = {
       summary: (start, end, nights, total) =>
         `${start} 至 ${end}，共 ${nights}。新的总价：${total}。`,
       usesFreeChange: '这次会用掉你唯一一次免费改期。',
-      holdReleased: '原来的冻结会解除。新的日期需要经理重新审核，再次批准之前不会冻结任何费用。',
+      holdReleased: '新的日期需要经理重新审核批准。网上不付款，到店时在前台付款。',
       paidChange:
         '我们先在你的卡上冻结新的价格，再解除冻结或退回原来的付款。已确认的宠物仍然是已确认。',
       keepDates: '保留原日期',

@@ -1,12 +1,12 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { Modal } from '../../../../shared/components/ui/Modal/Modal';
-import { bookAddOn, fetchAddOnCatalogue } from '../../api/stayChangesApi';
+import { fetchAddOnCatalogue, requestAddOn } from '../../api/stayChangesApi';
 import { usePortalCopy, usePortalLocale } from '../../i18n/portalLocale';
 import type { PetStay } from '../../types/stays';
 import {
   ADD_ON_PRICE_CHANGED,
   type AddOnCatalogue,
-  type AddOnResult,
+  type StayChangeRequest,
 } from '../../types/stayChanges';
 import { AddOnOfferList } from './AddOnOfferList';
 import { IN_STAY_CHANGES_COPY } from './inStayChangesCopy';
@@ -24,7 +24,7 @@ import { DIALOG_ALERT, DIALOG_INPUT, DIALOG_INTRO, DIALOG_LABEL } from './stayDi
 interface AddOnDialogProps {
   stay: PetStay;
   onClose: () => void;
-  onAdded: (result: AddOnResult) => void;
+  onRequested: (request: StayChangeRequest) => void;
 }
 
 type CatalogueState =
@@ -38,7 +38,7 @@ const QUANTITIES = [1, 2, 3, 4, 5];
 const cents = (amount: number): number => Math.round(amount * 100) / 100;
 
 /** Books one priced service for one day of a stay under way, at the price the button names. */
-export function AddOnDialog({ stay, onClose, onAdded }: AddOnDialogProps): ReactElement {
+export function AddOnDialog({ stay, onClose, onRequested }: AddOnDialogProps): ReactElement {
   const locale = usePortalLocale();
   const { addOn: copy, shared } = usePortalCopy(IN_STAY_CHANGES_COPY);
   const [catalogue, setCatalogue] = useState<CatalogueState>({ status: 'loading' });
@@ -94,8 +94,8 @@ export function AddOnDialog({ stay, onClose, onAdded }: AddOnDialogProps): React
     setSending(true);
     setProblem(null);
     try {
-      onAdded(
-        await bookAddOn(stay.bookingId, stay.bookingPetId, {
+      onRequested(
+        await requestAddOn(stay.bookingId, stay.bookingPetId, {
           serviceId: offer.serviceId,
           date,
           quantity,

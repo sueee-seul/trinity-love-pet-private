@@ -34,12 +34,14 @@ import { toConfirmationNumber } from './petparent.booking.js';
 import { deleteTasksForBookingPet } from './task.fromBooking.service.js';
 
 /**
- * A guest cancelling their own stay in My stays, before drop-off (booking.fee-policy.ts has the
- * rules: free 7 days or more ahead or inside the grace and cooling-off windows, one night per
- * confirmed pet from 72 hours to 7 days, half of each confirmed pet's stay after that). A stay
- * already charged (paid at request) is refunded all but the fee. Otherwise the fee is taken from
- * the hold and the rest released, or charged to the saved card when there is no hold yet; a
- * declined card cancels nothing. Moving the stay instead is booking.guest-reschedule.ts.
+ * A guest cancelling their own stay in My stays, before drop-off. A request made without a card
+ * (every request since 2026-10-14: nothing is paid online) cancels free, since no money was taken.
+ * An older card-guaranteed stay follows booking.fee-policy.ts (free 7 days or more ahead or inside
+ * the grace and cooling-off windows, one night per confirmed pet from 72 hours to 7 days, half of
+ * each confirmed pet's stay after that): a stay already charged is refunded all but the fee,
+ * otherwise the fee is taken from the hold and the rest released, or charged to the saved card
+ * when there is no hold yet; a declined card cancels nothing. Moving the stay instead is
+ * booking.guest-reschedule.ts.
  */
 
 export type ChangeDependencies = GuaranteeDependencies;
@@ -47,7 +49,8 @@ export type ChangeDependencies = GuaranteeDependencies;
 const GUEST_CANCELLATION_REASON = 'Cancelled by the guest';
 
 export interface ChangeableStay {
-  payment: GuaranteePayment;
+  /** Null for a request made without a card: nothing to hold, charge or refund. */
+  payment: GuaranteePayment | null;
   /** Pets still on the booking, each with its dates. */
   pets: (PetAtTheDesk & { dropOffAt: Date; pickUpAt: Date })[];
   dropOffAt: Date;
@@ -78,12 +81,12 @@ export const assertPreviewedAmount = (
 };
 
 /**
- * A stay that can still change: made with a saved card, not settled, nobody arrived yet; and the
+ * A stay that can still change: not settled (when it has a card), nobody arrived yet; and the
  * guest's own when `ownerId` is given (staff pass null).
  */
 export const changeableStay = (booking: LockedBooking, ownerId: string | null): ChangeableStay => {
   if (ownerId !== null && booking.ownerId !== ownerId) throw bookingNotFound();
-  const payment = openGuaranteeOf(booking);
+  const payment = booking.payment ? openGuaranteeOf(booking) : null;
   const onBooking = booking.pets.filter((pet) => isActivePet(pet.reviewStatus));
   if (onBooking.length === 0) {
     throw new AppError('This stay was cancelled.', 'BOOKING_NOT_ACTIVE', 409);
@@ -106,6 +109,9 @@ const guestCancellation = (
   now: Date,
 ): { fee: number; rule: GuestCancellationRule } => {
   if (now.getTime() >= stay.dropOffAt.getTime()) throw stayStarted();
+  // Nothing was paid online, so there is nothing to keep: cancelling is free ("free now, nothing
+  // charged" on the page, whether the stay is approved or still waiting).
+  if (!stay.payment) return { fee: 0, rule: 'early' };
   const approved = stay.pets.filter((pet) => pet.reviewStatus === 'approved');
   const decisions = approved.map((pet) =>
     decideCancellation({
@@ -176,7 +182,8 @@ export const previewCancellation = async (
   const preview = await withLockedBooking(bookingId, async (booking) => {
     const stay = changeableStay(booking, ownerId);
     const { fee, rule } = guestCancellation(booking, stay, now);
-    return { fee, rule, total: stay.payment.amount, contact: readTeamContact() };
+    const total = stay.payment?.amount ?? stay.pets.reduce((sum, pet) => sum + pet.price, 0);
+    return { fee, rule, total, contact: readTeamContact() };
   });
   if (!preview) throw bookingNotFound();
   return preview;
@@ -198,7 +205,9 @@ export const cancelByGuest = async (
       CANCELLATION_FEE_CHANGED,
       'The cancellation fee has changed since you checked it. Please look at the new fee and confirm again.',
     );
-    if (isChargedUnsettled(stay.payment)) {
+    if (!stay.payment) {
+      // Made without a card: nothing to release or charge.
+    } else if (isChargedUnsettled(stay.payment)) {
       await settleCharged(stay.payment, fee, 'cancel', client, dependencies.cardProcessor);
     } else if (fee === 0) {
       await releaseGuarantee(stay.payment, client, dependencies.cardProcessor);

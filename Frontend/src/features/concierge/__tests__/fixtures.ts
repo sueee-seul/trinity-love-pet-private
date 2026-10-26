@@ -3,7 +3,6 @@ import { createEmptyNeeds, useConciergeStore } from '../store/conciergeStore';
 import type {
   ConciergeAcceptQuoteResponse,
   ConciergeBookingPolicy,
-  ConciergeCardSetupResponse,
   ConciergeCatalogue,
   ConciergeCatalogueItem,
   ConciergeCheckoutResponse,
@@ -59,10 +58,7 @@ export const statusResponse = (
   ...overrides,
 });
 
-/**
- * A request sent with a saved card. Once approved, the card is held 48 hours before a 10:30
- * drop-off on Sat 12 Dec, which is 10:30 on Thu 10 Dec in Auckland.
- */
+/** A request waiting for our manager; nothing is paid online. */
 export const checkoutResponse = (
   overrides: Partial<ConciergeCheckoutResponse> = {},
 ): ConciergeCheckoutResponse => ({
@@ -75,18 +71,9 @@ export const checkoutResponse = (
   currency: 'NZD',
   accountCreated: true,
   safetyTasks: ['vaccination_certificate'],
-  // The stay waits for our manager: its $230 is held until the review deadline.
-  payment: { status: 'held', amount: 230, reviewBy: '2026-12-02T02:00:00.000Z', testMode: true },
+  // The stay waits for our manager; nothing is paid online, $230 is paid at the desk.
+  payment: { status: 'pay_at_desk', amount: 230, reviewBy: '2026-12-02T02:00:00.000Z' },
   ...overrides,
-});
-
-/** The development fake: no card form, and confirming hands back this setup id. */
-export const fakeCardSetup = (setupId = 'fake_seti_acceptance-1'): ConciergeCardSetupResponse => ({
-  processor: 'fake',
-  setupId,
-  clientSecret: `${setupId}_secret`,
-  publishableKey: null,
-  testMode: true,
 });
 
 const item = (
@@ -228,10 +215,7 @@ export const oneDog: ConciergeNeeds = {
   pets: [{ species: 'dog', size: 'large', needsMedication: false, firstTimeBoarding: null }],
 };
 
-/**
- * Ava, signed in, on the details step with every field filled and the booking terms and card
- * rules agreed.
- */
+/** Ava, signed in, on the details step with every field filled and the booking terms agreed. */
 export const openFilledDetails = (): void => {
   signInParent();
   useConciergeStore.setState({

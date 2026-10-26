@@ -57,7 +57,7 @@ export function toIsoDate(date: Date): string {
   return `${date.getFullYear()}-${padTwo(date.getMonth() + 1)}-${padTwo(date.getDate())}`;
 }
 
-/** "Mon 12 Oct 2026" in English, "2026年10月12日 周一" in Chinese, "" when the value is not a date. */
+/** "Mon 12 Oct 2026" in English, year-month-day and weekday in Chinese, "" when the value is not a date. */
 export function formatDateLabel(value: string, locale: FieldLocale): string {
   const date = parseIsoDate(value);
   if (!date) return '';
@@ -77,7 +77,7 @@ export function minutesToTime(totalMinutes: number): string {
   return `${padTwo(hours)}:${padTwo(totalMinutes % MINUTES_PER_HOUR)}`;
 }
 
-/** "9:00 am" / "12:30 pm" in English, "上午9:00" / "下午12:30" in Chinese, "" when invalid. */
+/** "9:00 am" / "12:30 pm" in English, with the morning or afternoon word first in Chinese, "" when invalid. */
 export function formatTimeLabel(value: string, locale: FieldLocale): string {
   const totalMinutes = parseTimeToMinutes(value);
   if (totalMinutes === null) return '';

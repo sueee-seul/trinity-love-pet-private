@@ -68,17 +68,18 @@ describe('createBooking', () => {
     expect(statements().at(-1)).toBe('COMMIT');
   });
 
-  it('records a concierge booking as confirmed, with its pets approved and its card held', async () => {
-    const base = input();
-    await createBooking({
-      ...base,
-      payment: { ...base.payment, status: 'authorized', processorPaymentIntentId: 'pi_123' },
-      recording: { bookingStatus: 'confirmed', petReviewStatus: 'approved' },
+  it('records a concierge request with its pets waiting and no payment, since nothing is paid online', async () => {
+    const request = input({
+      recording: { bookingStatus: 'confirmed', petReviewStatus: 'pending' },
     });
+    delete request.payment;
+    await createBooking(request);
 
-    expect(paramsOf('INSERT INTO booking_pets (')?.[4]).toBe('approved');
-    expect(paramsOf('INSERT INTO booking_payments')?.slice(4)).toEqual(['authorized', 'pi_123']);
+    expect(paramsOf('INSERT INTO booking_pets (')?.[4]).toBe('pending');
+    expect(statements().some((sql) => sql.includes('INSERT INTO payment_methods'))).toBe(false);
+    expect(statements().some((sql) => sql.includes('INSERT INTO booking_payments'))).toBe(false);
     expect(paramsOf('UPDATE bookings SET status')).toEqual(['booking-uuid', 'confirmed']);
+    expect(statements().at(-1)).toBe('COMMIT');
   });
 
   it('runs the guard first inside the transaction', async () => {

@@ -176,7 +176,8 @@ export interface CreateBookingInput {
     signatureUrl: string | null;
     agreedAt: Date;
   };
-  payment: {
+  /** Absent for a concierge request: nothing is paid online, the guest pays at the desk. */
+  payment?: {
     processor: string;
     processorPaymentMethodId: string;
     amount: number;
@@ -215,6 +216,39 @@ export interface CreatedBookingRecord {
   bookingId: string;
   createdAt: string;
 }
+
+const insertPayment = async (
+  client: PoolClient,
+  petOwnersUuid: string,
+  bookingUuid: string,
+  payment: NonNullable<CreateBookingInput['payment']>,
+): Promise<void> => {
+  const paymentMethodResult = await client.query<{ uuid: string }>(
+    `INSERT INTO payment_methods (pet_owners_uuid, is_default, processor, processor_payment_method_id)
+     VALUES ($1::uuid, false, $2, $3)
+     RETURNING uuid`,
+    [petOwnersUuid, payment.processor, payment.processorPaymentMethodId],
+  );
+  const paymentMethod = paymentMethodResult.rows[0];
+  if (!paymentMethod) {
+    throw new Error('Payment method insert returned no row');
+  }
+
+  await client.query(
+    `INSERT INTO booking_payments (
+       payment_methods_uuid, bookings_uuid, amount, currency, status, processor_payment_intent_id
+     )
+     VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6)`,
+    [
+      paymentMethod.uuid,
+      bookingUuid,
+      payment.amount,
+      payment.currency,
+      payment.status ?? 'succeeded',
+      payment.processorPaymentIntentId ?? null,
+    ],
+  );
+};
 
 // Runs the whole booking write (bookings, booking_pets, booking_pets_services,
 // booking_pets_caring_info, bookings_agreements, payment_methods,
@@ -308,31 +342,9 @@ export const createBooking = async (input: CreateBookingInput): Promise<CreatedB
       ],
     );
 
-    const paymentMethodResult = await client.query<{ uuid: string }>(
-      `INSERT INTO payment_methods (pet_owners_uuid, is_default, processor, processor_payment_method_id)
-       VALUES ($1::uuid, false, $2, $3)
-       RETURNING uuid`,
-      [input.petOwnersUuid, input.payment.processor, input.payment.processorPaymentMethodId],
-    );
-    const paymentMethod = paymentMethodResult.rows[0];
-    if (!paymentMethod) {
-      throw new Error('Payment method insert returned no row');
+    if (input.payment) {
+      await insertPayment(client, input.petOwnersUuid, booking.uuid, input.payment);
     }
-
-    await client.query(
-      `INSERT INTO booking_payments (
-         payment_methods_uuid, bookings_uuid, amount, currency, status, processor_payment_intent_id
-       )
-       VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6)`,
-      [
-        paymentMethod.uuid,
-        booking.uuid,
-        input.payment.amount,
-        input.payment.currency,
-        input.payment.status ?? 'succeeded',
-        input.payment.processorPaymentIntentId ?? null,
-      ],
-    );
 
     await client.query(`UPDATE bookings SET status = $2 WHERE uuid = $1::uuid`, [
       booking.uuid,

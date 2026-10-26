@@ -7,7 +7,7 @@ Each pet parent page shows one language only. Notes people write themselves are 
 
 | Page language | Note written in                                                                      | Shown as                                                      |
 | ------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| Chinese       | English (staff care notes on Live care)                                              | Chinese translation, marked "自动翻译", original one tap away |
+| Chinese       | English (staff care notes on Live care)                                              | Chinese translation, marked "Auto-translated" (in Chinese), original one tap away |
 | English       | Chinese (the parent's own care answers, allergies, colour, diet and behaviour notes) | English translation, marked "Translated"                      |
 
 If a translation fails, the page says so in its own language and never shows the other language. Names (pets, people, medicines) stay as written.
@@ -17,7 +17,7 @@ If a translation fails, the page says so in its own language and never shows the
 `POST /api/petparent/translations/english`, signed-in pet parent only, 60 calls per 15 minutes.
 
 ```json
-{ "texts": ["Kibble twice a day", "喜欢白天睡觉"] }
+{ "texts": ["Kibble twice a day", "Likes to sleep in the day" (in Chinese)] }
 ```
 
 ```json

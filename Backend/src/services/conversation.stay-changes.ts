@@ -22,11 +22,11 @@ import {
   listBookingsForOwner,
   type MyBookingPetRow,
 } from '../repositories/petparent.booking.read.repository.js';
-import { bookAddOn, listAddOns } from './booking.guest-addon.js';
+import { listAddOns } from './booking.guest-addon.js';
 import { cancelByGuest, previewCancellation } from './booking.guest-change.js';
 import { previewReschedule, rescheduleByGuest } from './booking.guest-reschedule.js';
-import { extendStay, previewExtension } from './booking.guest-extend.js';
-import { changeStayTimes } from './booking.guest-times.js';
+import { previewExtension } from './booking.guest-extend.js';
+import { requestAddOn, requestExtension, requestTimes } from './stay-change-requests.js';
 import {
   addDays,
   isConfirmation,
@@ -68,10 +68,10 @@ export interface StayChangeDependencies {
   now?: () => Date;
   listBookings?: (ownerId: string) => Promise<MyBookingPetRow[]>;
   previewExtension?: typeof previewExtension;
-  extendStay?: typeof extendStay;
+  requestExtension?: typeof requestExtension;
   listAddOns?: typeof listAddOns;
-  bookAddOn?: typeof bookAddOn;
-  changeStayTimes?: typeof changeStayTimes;
+  requestAddOn?: typeof requestAddOn;
+  requestTimes?: typeof requestTimes;
   previewCancellation?: typeof previewCancellation;
   cancelByGuest?: typeof cancelByGuest;
   previewReschedule?: typeof previewReschedule;
@@ -180,23 +180,8 @@ const COPY = {
       `${service} for ${pet} on ${dayOf(date, 'en')}: ${money(amount)} (GST included), ${EN_HOW_PAID[settlement]}. Shall I book it?`,
     timePreview: (pets: string[], date: string, time: string): string =>
       `I'll move ${possessive(pets, 'en')} check-out on ${dayOf(date, 'en')} to ${timeOf(time, 'en')}. This doesn't change the price. Shall I go ahead?`,
-    extendDone: (
-      pets: string[],
-      newEnd: string,
-      amount: number,
-      settlement: ChargeSettlement,
-    ): string =>
-      `Done: ${namesOf(pets, 'en')} now ${pets.length > 1 ? 'stay' : 'stays'} until ${dayOf(newEnd, 'en')}. ${settlement === 'desk' ? `${money(amount)} was added to your bill. You pay it at the desk when you check out.` : `${money(amount)} was charged to your card. Your receipt is in your email and your notifications.`}`,
-    addOnDone: (
-      service: string,
-      pet: string,
-      date: string,
-      amount: number,
-      settlement: ChargeSettlement,
-    ): string =>
-      `Booked: ${service} for ${pet} on ${dayOf(date, 'en')}. ${settlement === 'desk' ? `${money(amount)} was added to your bill, to pay at the desk when you check out,` : `${money(amount)} was charged to your card,`} and the team has it on their task list.`,
-    timeDone: (date: string, time: string): string =>
-      `Done: check-out is now ${timeOf(time, 'en')} on ${dayOf(date, 'en')}. The team has been told.`,
+    changeRequested: (summary: string): string =>
+      `I've asked our manager to ${summary}. Nothing changes until it is approved, and I'll tell you here once they decide. Any amount is added to your bill, paid at the desk at pick-up.`,
     priceChanged: (amount: number): string =>
       `The price changed to ${money(amount)} since I checked. Shall I go ahead at the new price?`,
     cardDeclined:
@@ -262,23 +247,8 @@ const COPY = {
       `${dayOf(date, 'zh')}为${pet}预订${service}：${money(amount)}（含GST），${ZH_HOW_PAID[settlement]}。要我帮你预订吗？`,
     timePreview: (pets: string[], date: string, time: string): string =>
       `我会把${possessive(pets, 'zh')}离店时间改到${dayOf(date, 'zh')} ${time}。价格不变。要我帮你办理吗？`,
-    extendDone: (
-      pets: string[],
-      newEnd: string,
-      amount: number,
-      settlement: ChargeSettlement,
-    ): string =>
-      `已办好：${namesOf(pets, 'zh')}会住到${dayOf(newEnd, 'zh')}。${settlement === 'desk' ? `${money(amount)}已记入账单，离店时在前台支付。` : `已从你的银行卡扣款${money(amount)}，收据已发到你的邮箱和通知里。`}`,
-    addOnDone: (
-      service: string,
-      pet: string,
-      date: string,
-      amount: number,
-      settlement: ChargeSettlement,
-    ): string =>
-      `已预订：${dayOf(date, 'zh')}为${pet}安排${service}。${settlement === 'desk' ? `${money(amount)}已记入账单，离店时在前台支付` : `已从你的银行卡扣款${money(amount)}`}，工作人员的任务清单里已经有这一项。`,
-    timeDone: (date: string, time: string): string =>
-      `已办好：离店时间改为${dayOf(date, 'zh')} ${time}，已通知工作人员。`,
+    changeRequested: (): string =>
+      '已把你的申请发给经理。批准之前不会有任何更改，经理决定后我会在这里告诉你。费用会记入账单，接走时在前台支付。',
     priceChanged: (amount: number): string =>
       `我查过之后价格变成了${money(amount)}。要按新价格办理吗？`,
     cardDeclined:
@@ -770,22 +740,19 @@ const applyChange = async (
   const bookingId = pending.booking_id ?? '';
   const amount = pending.amount ?? 0;
   try {
+    // A change to a stay under way is a request for our manager (stay-change-requests.ts); this
+    // reply is the parent's receipt, so the request itself is not announced in the chat again.
     if (pending.kind === 'extend' && pending.end_date) {
-      const result = await ctx.deps.extendStay(ctx.ownerId, bookingId, {
-        endDate: pending.end_date,
-        expectedAmount: amount,
-      });
-      return said(
-        copy.extendDone(
-          result.pets.map((pet) => pet.petName),
-          result.newEndDate,
-          result.amount,
-          result.settlement,
-        ),
+      const request = await ctx.deps.requestExtension(
+        ctx.ownerId,
+        bookingId,
+        { endDate: pending.end_date, expectedAmount: amount },
+        { announceInChat: false },
       );
+      return said(copy.changeRequested(request.summary));
     }
     if (pending.kind === 'add_on' && pending.service_id && pending.service_date) {
-      const result = await ctx.deps.bookAddOn(
+      const request = await ctx.deps.requestAddOn(
         ctx.ownerId,
         bookingId,
         pending.booking_pet_ids[0] ?? '',
@@ -795,16 +762,9 @@ const applyChange = async (
           quantity: 1,
           expectedAmount: amount,
         },
+        { announceInChat: false },
       );
-      return said(
-        copy.addOnDone(
-          result.serviceName,
-          result.petName,
-          result.date,
-          result.amount,
-          result.settlement,
-        ),
-      );
+      return said(copy.changeRequested(request.summary));
     }
     if (pending.kind === 'cancel') {
       const result = await ctx.deps.cancelByGuest(ctx.ownerId, bookingId, { expectedFee: amount });
@@ -819,12 +779,18 @@ const applyChange = async (
       return said(copy.moveDone(result.startDate, result.endDate, result.held));
     }
     if (pending.kind === 'pick_up_time' && pending.pick_up_time && pending.pick_up_date) {
+      const summaries: string[] = [];
       for (const bookingPetId of pending.booking_pet_ids) {
-        await ctx.deps.changeStayTimes(ctx.ownerId, bookingId, bookingPetId, {
-          pickUpTime: pending.pick_up_time,
-        });
+        const request = await ctx.deps.requestTimes(
+          ctx.ownerId,
+          bookingId,
+          bookingPetId,
+          { pickUpTime: pending.pick_up_time },
+          { announceInChat: false },
+        );
+        summaries.push(request.summary);
       }
-      return said(copy.timeDone(pending.pick_up_date, pending.pick_up_time));
+      return said(copy.changeRequested(summaries.join('; ')));
     }
     return said(copy.nothingChanged);
   } catch (error: unknown) {
@@ -877,10 +843,10 @@ export const runStayChangeTurn = async (
     deps: {
       listBookings: dependencies.listBookings ?? listBookingsForOwner,
       previewExtension: dependencies.previewExtension ?? previewExtension,
-      extendStay: dependencies.extendStay ?? extendStay,
+      requestExtension: dependencies.requestExtension ?? requestExtension,
       listAddOns: dependencies.listAddOns ?? listAddOns,
-      bookAddOn: dependencies.bookAddOn ?? bookAddOn,
-      changeStayTimes: dependencies.changeStayTimes ?? changeStayTimes,
+      requestAddOn: dependencies.requestAddOn ?? requestAddOn,
+      requestTimes: dependencies.requestTimes ?? requestTimes,
       previewCancellation: dependencies.previewCancellation ?? previewCancellation,
       cancelByGuest: dependencies.cancelByGuest ?? cancelByGuest,
       previewReschedule: dependencies.previewReschedule ?? previewReschedule,

@@ -22,6 +22,9 @@ const TITLES_IN_CHINESE: Record<ParentNotificationKind, string> = {
   booking_approved: '已确认',
   booking_refused: '未被接受',
   booking_back_in_review: '重新审核',
+  booking_change_requested: '已提交更改申请',
+  booking_change_approved: '更改已批准',
+  booking_change_refused: '更改未获批准',
   booking_extended: '住宿已延长',
   booking_picked_up_early: '提前离店',
   booking_add_on_booked: '已预订附加服务',
@@ -39,6 +42,9 @@ const GENERAL_IN_CHINESE: Record<ParentNotificationKind, string> = {
   booking_approved: '你的一次住宿已确认。',
   booking_refused: '很抱歉，你的一次住宿申请没有被接受。',
   booking_back_in_review: '你的一次住宿又在等待经理审核。',
+  booking_change_requested: '你提交了住宿期间的更改申请，经理会审核后告诉你结果。',
+  booking_change_approved: '经理批准了你的更改申请。',
+  booking_change_refused: '很抱歉，你的更改申请没有获得批准，原因请到“我的住宿”查看。',
   // The in-stay changes, the daily update and the stay report are never read back (the server
   // keeps no facts for them), so each gets its line here and the page where the detail is.
   booking_extended: '你延长了一次住宿，新的日期和费用已经记下。',
@@ -87,7 +93,7 @@ const dayParts = (iso: string): [number, number, number] => {
   return [year, month, day];
 };
 
-/** "2026年10月12日至15日", "2026年9月28日至10月2日", "2026年12月30日至2027年1月2日". */
+/** Chinese stay dates, year first: "12 to 15 Oct 2026", "28 Sep to 2 Oct 2026", "30 Dec 2026 to 2 Jan 2027". */
 export const chineseStayDates = ({ start, end }: NoticeStayDates): string => {
   const [startYear, startMonth, startDay] = dayParts(start);
   const [endYear, endMonth, endDay] = dayParts(end);
@@ -100,7 +106,7 @@ export const chineseStayDates = ({ start, end }: NoticeStayDates): string => {
 const pets = (names: string[]): string =>
   names.length > 0 ? listOfNames(names, 'zh') : '你的宠物';
 
-/** "（2026年10月12日至15日）", or nothing when the stay had no dates. */
+/** The stay dates in Chinese brackets, or nothing when the stay had no dates. */
 const inBrackets = (dates: NoticeStayDates | null): string =>
   dates ? `（${chineseStayDates(dates)}）` : '';
 

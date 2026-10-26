@@ -100,7 +100,7 @@ The daily update and the arrival note carry one item: the newest video of the da
 one, otherwise the newest photo. The path is stored in `daily_summaries.photo_path` as before, and
 `GET /api/petparent/stays/:bookingPetId/summaries` adds `media: { kind: 'photo' | 'video', url }`
 next to the old `photoPath`. The words name it: "There is a short video of Bella from today with
-this update on Live care." (zh: "今天Bella的一段短视频和这条动态一起放在“照顾动态”里。"), and the
+this update on Live care." (the same sentence in Chinese), and the
 arrival note says "A short video from today is on Live care." instead of the photo line. Live care
 plays it in a `<video controls muted playsInline preload="metadata">` with a spoken name; it never
 plays by itself. The care timeline's photo viewers show images only, so a task's videos are left

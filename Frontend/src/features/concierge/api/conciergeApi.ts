@@ -5,8 +5,6 @@ import { request } from '../../pet-parent/api/bookingApi';
 import type { Pet, Service } from '../../pet-parent/types/booking';
 import type {
   ConciergeAcceptQuoteResponse,
-  ConciergeCardSetupRequest,
-  ConciergeCardSetupResponse,
   ConciergeChatRequest,
   ConciergeChatResponse,
   ConciergeCheckoutRequest,
@@ -46,9 +44,6 @@ export const conciergeApi = {
 
   acceptQuote: (quoteToken: string): Promise<ConciergeAcceptQuoteResponse> =>
     post('/concierge/quotes/accept', { quoteToken }),
-
-  cardSetup: (body: ConciergeCardSetupRequest): Promise<ConciergeCardSetupResponse> =>
-    post('/concierge/card-setup', body),
 
   checkout: (body: ConciergeCheckoutRequest): Promise<ConciergeCheckoutResponse> =>
     post('/concierge/checkout', body),

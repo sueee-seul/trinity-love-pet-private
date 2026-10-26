@@ -151,7 +151,7 @@ When the same review image is available on more than one surface:
 6. The Manager detail uses the already-loaded review snapshot when navigation stays within the same
    SPA session.
 
-“一次性讀取” means one transfer per browser cache context for a stable object URL. It does not
+"Read once" means one transfer per browser cache context for a stable object URL. It does not
 mean that every user, device, or clean browser profile shares one global download.
 
 ## Implemented solution

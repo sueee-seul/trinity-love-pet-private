@@ -5,7 +5,6 @@ import {
 } from './aiProcessingCopy';
 import type {
   AiProcessingDisclosure,
-  ConciergeBookingPolicy,
   ConciergeCheckoutStatus,
   ConciergeLocale,
   ConciergePetSize,
@@ -24,13 +23,12 @@ export type GreetingMode = 'model' | 'rules' | 'unknown';
  * The notices here are not decoration. They carry what the NZ/AU compliance review asked for:
  * saying the guest is talking to an AI, how their information is used and where it is processed,
  * that Wagstay does not save voice recordings (what AWS keeps is set by its own data settings, so
- * it is not promised here), which stays are confirmed at once and which our manager checks first,
- * and how the saved card is held and charged once a stay is confirmed. Change their meaning only
+ * it is not promised here), that every request waits for our manager, and that nothing is paid
+ * online (the guest pays at the desk after the arrival health check). Change their meaning only
  * with that review in hand.
  *
- * Promises are limited to what the system does today (Fair Trading Act s12A/s13). The fee rules
- * take their numbers from the server's policy, never from here, and a released hold is never
- * called a refund: no money moved. A stay is called confirmed only once the server confirmed it,
+ * Promises are limited to what the system does today (Fair Trading Act s12A/s13). A stay is
+ * called confirmed only once the server confirmed it,
  * and a stay waiting for our manager is never called booked (s9, s11). Wagstay's own rules, such
  * as the vaccines we ask for and the stays our manager checks, are never presented as law (s13(i)).
  */
@@ -86,8 +84,6 @@ export interface ConciergeCopy {
     food: string;
     extras: string;
   };
-  /** Online booking is off because this server has no card processor to save a card with. */
-  handoffNotice: string;
   /** Online booking is off for another reason (no room count on this server). */
   bookingOffNotice: string;
   chat: {
@@ -346,8 +342,6 @@ export interface ConciergeCopy {
       passwordHint: string;
       haveAccount: string;
       signIn: string;
-      /** Under the card section until the guest's email is in. */
-      cardNeedsEmail: string;
     };
     firstName: string;
     lastName: string;
@@ -386,8 +380,7 @@ export interface ConciergeCopy {
       showOriginal: string;
     };
     /**
-     * The booking terms, including the card hold, charges and fees: one box, never ticked for the
-     * parent. Emergency vet consent has its own box, clearer evidence of that consent.
+     * The booking terms: one box, never ticked for the parent. Emergency vet consent has its own box, clearer evidence of that consent.
      */
     agreeCheckbox: string;
     vetConsentCheckbox: string;
@@ -400,19 +393,8 @@ export interface ConciergeCopy {
       notice: (reasons: string) => string;
       reasons: Record<ManagerReviewReason, string>;
     };
-    /** The saved card: the full price is held when the request is sent, charged once confirmed. */
-    card: {
-      title: string;
-      /** `amount` is formatted, e.g. "$204.00"; `reviewHours` is how long our manager may take. */
-      lead: (amount: string, reviewHours: number) => string;
-      rulesTitle: string;
-      loading: string;
-      unavailable: string;
-      failed: string;
-      retry: string;
-      testStripe: string;
-      testFake: string;
-    };
+    /** Nothing is paid online: shown above the send button. */
+    payAtDesk: string;
     summaryTitle: string;
     change: string;
     submit: string;
@@ -438,18 +420,12 @@ export interface ConciergeCopy {
     confirmed: string;
     dropOff: string;
     pickUp: string;
-    /** The receipt's total: paid now, or held while our manager checks. */
-    totalPaid: string;
-    totalHeld: string;
+    /** The receipt's total, paid at the desk on arrival. */
+    totalToPay: string;
     /** Shown only when a stay waits for our manager. */
     waitingNotBooked: string;
-    /** What happened on the card: charged for confirmed stays, or held until our manager decides. */
-    payment: {
-      charged: (amount: string) => string;
-      /** `deadline` is formatted, e.g. "Fri 2 Oct 3:00 pm". */
-      held: (amount: string, deadline: string) => string;
-      testMode: string;
-    };
+    /** Nothing was paid: our manager decides by `deadline` (formatted, e.g. "Fri 2 Oct 3:00 pm"). */
+    payAtDesk: (amount: string, deadline: string) => string;
     accountCreated: (email: string) => string;
     whatNextTitle: string;
     whatNext: string[];
@@ -489,13 +465,6 @@ export interface ConciergeCopy {
     /** A hand-built combination the server refused; the last priced stay is kept. */
     selectionInvalid: string;
     fullyBooked: string;
-    cardDeclined: string;
-    cardNotReady: string;
-    /** The card was refused when we tried to hold the price: nothing was booked. */
-    holdDeclined: string;
-    /** The bank asked to confirm the payment again. */
-    cardAuthentication: string;
-    paymentsNotConfigured: string;
     petCountMismatch: string;
     petNotOwned: string;
     petDuplicated: string;
@@ -516,13 +485,7 @@ export interface ConciergeCopy {
     /** The agreement is signed with the account's name, and this account has none. */
     nameMissing: string;
   };
-  /** The fee rules in plain words, with the server's numbers. */
-  feeRules: (policy: ConciergeBookingPolicy) => string[];
 }
-
-/** The free-cancellation window in whole days, as the rules state it (168 hours is 7 days). */
-const freeCancellationDays = (policy: ConciergeBookingPolicy): number =>
-  Math.round(policy.freeCancellationHours / 24);
 
 const EN: ConciergeCopy = {
   pageTitle: 'Plan your pet’s stay',
@@ -558,8 +521,6 @@ const EN: ConciergeCopy = {
     food: 'Food',
     extras: 'Extras',
   },
-  handoffNotice:
-    'You can plan and see prices here. Card payments aren’t set up yet, so requests can’t be sent online. Send your plan to our team in one tap instead.',
   bookingOffNotice:
     'You can plan and see prices here, but online booking is paused right now. Send your plan to our team in one tap and we will book it for you.',
   chat: {
@@ -746,14 +707,14 @@ const EN: ConciergeCopy = {
     priceChanged: (name, before, after) => `${name} is now ${after} (it was ${before}).`,
     promises: [
       'The price shown is the final price, GST included',
-      'No booking or card fees',
-      'You are only charged for confirmed stays',
-      'Confirmed at once when there is room',
+      'No booking fees',
+      'Nothing is paid online: you pay at the desk on arrival',
+      'Our manager approves each request',
     ],
     nextStepsTitle: 'What happens next',
     nextSteps: [
-      'You add a card and send your booking. We hold the full price, and charge it once we confirm your stay.',
-      'A stay with room is confirmed at once. If your pet takes medication, our manager checks the stay first.',
+      'You send your request. Nothing is booked or paid yet.',
+      'Our manager checks it and approves or declines it. You hear the answer in your notifications and in the chat.',
       'Before check-in, add vaccination proof. You give emergency vet consent, up to NZ$500, with its own tick when you send the booking.',
     ],
     sampleToggle: 'See an example daily update',
@@ -804,7 +765,7 @@ const EN: ConciergeCopy = {
   },
   verify: {
     title: 'Sign in to continue',
-    lead: 'Your stay is kept. Signing in lets us remember your pets and your card for next time. New here? Create an account below.',
+    lead: 'Your stay is kept. Signing in lets us remember your pets for next time. New here? Create an account below.',
     emailLabel: 'Email address',
     passwordLabel: 'Password',
     signIn: 'Sign in',
@@ -837,7 +798,6 @@ const EN: ConciergeCopy = {
       passwordHint: 'You sign in with it next time.',
       haveAccount: 'Already have an account?',
       signIn: 'Sign in',
-      cardNeedsEmail: 'Enter your email above, then add your card here.',
     },
     firstName: 'First name',
     lastName: 'Last name',
@@ -862,7 +822,7 @@ const EN: ConciergeCopy = {
     savedPetNote: 'One of your saved pets',
     termsTitle: 'Booking terms',
     requestNotice:
-      'When you send this, we confirm each pet’s stay at once if there is room. If a pet takes medication, our manager checks its stay first. A stay waiting for that check is not booked yet.',
+      'When you send this, our manager checks each pet’s stay and approves or declines it. Nothing is booked or paid until then.',
     termsSummary: [
       'You can cancel or change your dates yourself in My Stays. For an emergency or a sick pet, contact our team.',
       'By check-in we need vaccination proof that shows the date given and the next due date, and your consent to emergency vet care up to NZ$500 if we cannot reach you, given with its own tick below. These are Wagstay’s requirements. The vaccines we ask for (C5 for dogs, F3 for cats) are our own rule, not a law.',
@@ -878,8 +838,7 @@ const EN: ConciergeCopy = {
       translationNote: null,
       showOriginal: 'Show the English original',
     },
-    agreeCheckbox:
-      'I agree to the booking terms, including how my card is held, charged and refunded',
+    agreeCheckbox: 'I agree to the booking terms',
     vetConsentCheckbox:
       'If you can’t reach me, Wagstay may arrange emergency vet treatment for my pet, up to NZ$500',
     review: {
@@ -889,20 +848,8 @@ const EN: ConciergeCopy = {
         medication: 'takes medication',
       },
     },
-    card: {
-      title: 'Your card',
-      lead: (amount, reviewHours) =>
-        `When you send this request we hold ${amount} on your card. You are only charged once your stays are confirmed: straight away when every pet is confirmed, or once our manager has decided, within ${reviewHours} hours. A pet we can’t take, or don’t decide on in time, is not charged. If the card is declined, nothing is booked.`,
-      rulesTitle: 'Payment, cancelling and changing dates',
-      loading: 'Getting the card form ready…',
-      unavailable:
-        'Card payments aren’t set up yet, so requests can’t be sent online. Please contact our team.',
-      failed: 'The card form didn’t load.',
-      retry: 'Try again',
-      testStripe:
-        'Test mode: no real money moves. Use the test card 4242 4242 4242 4242 with any future date and any CVC.',
-      testFake: 'Test mode: no card is needed and nothing is charged.',
-    },
+    payAtDesk:
+      'Nothing is paid online. Our manager approves or declines your request, and you pay at the desk on arrival, after a quick health check.',
     summaryTitle: 'Your request',
     change: 'Change',
     submit: 'Send booking request',
@@ -954,21 +901,16 @@ const EN: ConciergeCopy = {
     confirmed: 'Confirmed',
     dropOff: 'Check-in',
     pickUp: 'Check-out',
-    totalPaid: 'Total paid',
-    totalHeld: 'Total, held on your card',
+    totalToPay: 'Total, paid at the desk',
     waitingNotBooked:
-      'A stay waiting for review is not booked yet. We will not take any money for a pet we cannot take.',
-    payment: {
-      charged: (amount) => `We’ve charged ${amount} to your card for your confirmed stay.`,
-      held: (amount, deadline) =>
-        `We’ve held ${amount} on your card. Our manager decides by ${deadline}. Then we charge the confirmed stays and release the rest; a pet we can’t take is not charged.`,
-      testMode: 'This was a test: no real money moved.',
-    },
+      'A stay waiting for review is not booked yet. We will tell you here, in your notifications and in the chat, once our manager decides.',
+    payAtDesk: (amount, deadline) =>
+      `Please wait a moment: our manager will approve or decline your request by ${deadline}. Nothing has been paid. If it is approved, you pay ${amount} at the desk on arrival, after a quick health check.`,
     accountCreated: (email) => `We’ve created your account for ${email}.`,
     whatNextTitle: 'What happens next',
     whatNext: [
-      'A confirmed stay has its boarding pass in My stays.',
-      'Our manager checks each stay marked Waiting for review. The answer appears in My stays, and we may also call you on your mobile.',
+      'Our manager checks each stay marked Waiting for review. The answer appears in your notifications, in the chat and in My stays.',
+      'Once a stay is approved, its boarding pass is in My stays. On the day, we do a quick health check at the desk and you pay there.',
     ],
     tasksTitle: 'Before check-in',
     tasksLead: 'We need these by check-in. They are Wagstay’s requirements.',
@@ -1025,13 +967,6 @@ const EN: ConciergeCopy = {
     quoteExpired: 'This price has expired. We’re fetching a fresh one.',
     selectionInvalid: 'That combination can’t be booked, so we kept your last priced stay.',
     fullyBooked: 'Sorry, some of those nights just filled up. Please choose other dates.',
-    cardDeclined: 'Your card couldn’t be saved. Please try another card.',
-    cardNotReady: 'Please enter your card again.',
-    holdDeclined: 'Your card was declined, so nothing was booked. Please try another card.',
-    cardAuthentication:
-      'Your bank asked to confirm this payment. Please enter your card again, or try another card.',
-    paymentsNotConfigured:
-      'Card payments aren’t set up yet, so requests can’t be sent online. Please contact our team.',
     petCountMismatch: 'This option is for a different number of pets. Please check your pets.',
     petNotOwned: 'One of the saved pets isn’t on your account. Please choose again.',
     petDuplicated: 'Each saved pet can only be chosen once.',
@@ -1051,15 +986,6 @@ const EN: ConciergeCopy = {
     termsUnavailable: 'The booking terms can’t be loaded right now. Please try again shortly.',
     nameMissing: 'Please add your name to your profile, then send the request again.',
   },
-  feeRules: (policy) => [
-    `Cancel ${freeCancellationDays(policy)} days or more before check-in: free.`,
-    `Cancel from ${policy.shortNoticeHours} hours to ${freeCancellationDays(policy)} days before check-in: the first night for each confirmed pet, excluding one-off extras, and never more than ${policy.shortNoticeFeePercent}% of its stay.`,
-    `Cancel less than ${policy.shortNoticeHours} hours before check-in, or don’t come on check-in day: ${policy.shortNoticeFeePercent}% of each confirmed pet’s stay.`,
-    'We refund the rest to your card, usually within 5 to 10 business days. We pay any card fee on refunds.',
-    'You can change your dates in My stays as often as you need before the check-in time. We hold the new price first, then release or refund the old payment.',
-    'If we can’t take your pet, or we cancel, you get everything back.',
-    'A released hold is not a charge. Your bank decides how fast it leaves your statement.',
-  ],
 };
 
 const ZH: ConciergeCopy = {
@@ -1089,8 +1015,6 @@ const ZH: ConciergeCopy = {
     food: '餐食',
     extras: '附加服务',
   },
-  handoffNotice:
-    '你可以在这里规划并查看价格。网上付款还没有开通，暂时无法在线提交申请，请一键把方案发给我们的工作人员。',
   bookingOffNotice:
     '你可以在这里规划并查看价格，但目前暂停在线预订。一键把方案发给我们的工作人员，我们会为你完成预订。',
   chat: {
@@ -1271,14 +1195,14 @@ const ZH: ConciergeCopy = {
     priceChanged: (name, before, after) => `${name}现在是 ${after}（原来是 ${before}）。`,
     promises: [
       '显示的就是最终价格，含 GST',
-      '没有预订费或刷卡费',
-      '只为已确认的住宿扣款',
-      '有空位就立即确认',
+      '没有预订费',
+      '网上不付款：到店时在前台付款',
+      '每个申请都由经理审核',
     ],
     nextStepsTitle: '接下来会怎样',
     nextSteps: [
-      '你添加银行卡并提交预约。我们先冻结全款，住宿确认后才扣款。',
-      '有空位的住宿会立即确认。如果宠物需要用药，经理会先审核这次住宿。',
+      '你提交申请。这时还没有预订，也不用付款。',
+      '经理审核后会批准或拒绝，结果会通过通知和聊天告诉你。',
       '入住前添加疫苗证明；提交预约时单独勾选，同意联系不上你时安排不超过 NZ$500 的紧急兽医治疗。',
     ],
     sampleToggle: '看看每日动态的示例',
@@ -1326,7 +1250,7 @@ const ZH: ConciergeCopy = {
   },
   verify: {
     title: '登录后继续',
-    lead: '你的住宿方案已经保留。登录后，我们可以记住你的宠物和银行卡，下次更方便。还没有账号？在下方创建一个。',
+    lead: '你的住宿方案已经保留。登录后，我们可以记住你的宠物，下次更方便。还没有账号？在下方创建一个。',
     emailLabel: '邮箱',
     passwordLabel: '密码',
     signIn: '登录',
@@ -1359,7 +1283,6 @@ const ZH: ConciergeCopy = {
       passwordHint: '下次用它登录。',
       haveAccount: '已经有账号？',
       signIn: '登录',
-      cardNeedsEmail: '先在上面填好邮箱，再在这里添加银行卡。',
     },
     firstName: '名',
     lastName: '姓',
@@ -1383,8 +1306,7 @@ const ZH: ConciergeCopy = {
     notesFromChat: '已经填入你告诉助手的内容，可以随意修改。',
     savedPetNote: '你保存的宠物',
     termsTitle: '预约条款',
-    requestNotice:
-      '提交后，有空位的住宿会立即确认。如果宠物需要用药，经理会先审核这只宠物的住宿。等待审核的住宿还没有预约成功。',
+    requestNotice: '提交后，经理会审核每只宠物的住宿，批准或拒绝。在那之前既没有预订，也不用付款。',
     termsSummary: [
       '你可以在“我的住宿”里自己取消或改期。遇到紧急情况或宠物生病，请联系我们的工作人员。',
       '入住之前，我们需要疫苗证明（上面要有接种日期和下次接种日期）；并请在下面单独勾选，授权我们在联系不上你时安排不超过 NZ$500 的紧急兽医治疗。这些是 Wagstay 自己的要求。我们要求的疫苗（狗狗 C5，猫咪 F3）是我们自己的规定，不是法律规定。',
@@ -1400,7 +1322,7 @@ const ZH: ConciergeCopy = {
       translationNote: '以下是中文译文，方便你阅读；如与英文版本有出入，以英文版本为准。',
       showOriginal: '查看英文原文',
     },
-    agreeCheckbox: '我同意预约条款，包括银行卡的冻结、扣款和退款规则',
+    agreeCheckbox: '我同意预约条款',
     vetConsentCheckbox: '联系不上我时，Wagstay 可以为我的宠物安排紧急兽医治疗，费用不超过 NZ$500',
     review: {
       notice: (reasons) =>
@@ -1409,19 +1331,7 @@ const ZH: ConciergeCopy = {
         medication: '需要用药',
       },
     },
-    card: {
-      title: '你的银行卡',
-      lead: (amount, reviewHours) =>
-        `提交申请时，我们会在你的卡上冻结 ${amount}。住宿确认后才扣款：每只宠物都立即确认的话马上扣款；需要经理审核的话，在 ${reviewHours} 小时内审核完后再扣款。我们接收不了、或者没能及时审核的宠物，不收费。银行卡被拒绝的话，就不会预订成功。`,
-      rulesTitle: '付款、取消和改期',
-      loading: '正在准备银行卡输入框…',
-      unavailable: '网上付款还没有开通，暂时无法在线提交申请，请联系我们的工作人员。',
-      failed: '银行卡输入框没有加载出来。',
-      retry: '重试',
-      testStripe:
-        '测试模式：不会动真钱。请用测试卡号 4242 4242 4242 4242，有效期填任意未来日期，安全码随意。',
-      testFake: '测试模式：不需要银行卡，也不会扣任何费用。',
-    },
+    payAtDesk: '网上不付款。经理会批准或拒绝你的申请；到店时先做简单的健康检查，然后在前台付款。',
     summaryTitle: '你的申请',
     change: '修改',
     submit: '提交预约申请',
@@ -1471,20 +1381,15 @@ const ZH: ConciergeCopy = {
     confirmed: '已确认',
     dropOff: '入住',
     pickUp: '离店',
-    totalPaid: '已付总价',
-    totalHeld: '总价（已在卡上冻结）',
-    waitingNotBooked: '等待审核的住宿还没有预约成功。我们接收不了的宠物，不会收取任何费用。',
-    payment: {
-      charged: (amount) => `已确认的住宿，我们已经从你的卡上扣款 ${amount}。`,
-      held: (amount, deadline) =>
-        `我们已在你的卡上冻结 ${amount}。经理会在 ${deadline} 之前决定，之后我们扣除已确认住宿的费用，其余解除冻结；我们接收不了的宠物，不收费。`,
-      testMode: '这是一次测试：没有动真钱。',
-    },
+    totalToPay: '总价（到店在前台支付）',
+    waitingNotBooked: '等待审核的住宿还没有预约成功。经理决定后，我们会通过通知和聊天告诉你。',
+    payAtDesk: (amount, deadline) =>
+      `请稍等：经理会在 ${deadline} 之前批准或拒绝你的申请。现在还没有付任何费用。如果批准了，到店时先做简单的健康检查，然后在前台支付 ${amount}。`,
     accountCreated: (email) => `已为 ${email} 创建账号。`,
     whatNextTitle: '接下来会怎样',
     whatNext: [
-      '已确认的住宿，住宿凭证在“我的住宿”里。',
-      '标着“等待审核”的住宿由经理审核，结果会显示在“我的住宿”里，我们也可能打电话联系你。',
+      '标着“等待审核”的住宿由经理审核，结果会出现在通知、聊天和“我的住宿”里。',
+      '住宿批准后，住宿凭证在“我的住宿”里。入住当天我们先在前台做简单的健康检查，然后你在前台付款。',
     ],
     tasksTitle: '入住之前',
     tasksLead: '最晚在入住时需要完成这几项。这些是 Wagstay 自己的要求。',
@@ -1535,11 +1440,6 @@ const ZH: ConciergeCopy = {
     quoteExpired: '价格已过期，正在为你获取最新价格。',
     selectionInvalid: '这个组合无法预订，已为你保留上一次算好价格的住宿。',
     fullyBooked: '抱歉，其中有几晚刚刚住满了，请换个日期。',
-    cardDeclined: '这张卡没能保存，请换一张卡试试。',
-    cardNotReady: '请重新输入一次银行卡。',
-    holdDeclined: '你的银行卡被拒绝了，所以这次没有预订成功。请换一张卡试试。',
-    cardAuthentication: '你的银行要求再确认一次这笔付款。请重新输入银行卡，或换一张卡试试。',
-    paymentsNotConfigured: '网上付款还没有开通，暂时无法在线提交申请，请联系我们的工作人员。',
     petCountMismatch: '这个方案的宠物数量不对，请检查你的宠物。',
     petNotOwned: '有一只已保存的宠物不在你的账户里，请重新选择。',
     petDuplicated: '每只已保存的宠物只能选一次。',
@@ -1555,15 +1455,6 @@ const ZH: ConciergeCopy = {
     termsUnavailable: '预约条款暂时无法加载，请稍后再试。',
     nameMissing: '请先在个人资料里填写你的姓名，再提交申请。',
   },
-  feeRules: (policy) => [
-    `入住前 ${freeCancellationDays(policy)} 天或更早取消：免费。`,
-    `入住前 ${policy.shortNoticeHours} 小时到 ${freeCancellationDays(policy)} 天之间取消：每只已确认宠物收取第一晚费用，不含一次性加项，最多不超过这只宠物住宿费用的 ${policy.shortNoticeFeePercent}%。`,
-    `入住前不到 ${policy.shortNoticeHours} 小时取消，或者入住那天没来：收取每只已确认宠物住宿费用的 ${policy.shortNoticeFeePercent}%。`,
-    '其余的钱退回你的卡，一般需要 5 到 10 个工作日。退款产生的刷卡手续费由我们承担。',
-    '入住时间之前，可以在“我的住宿”里随时改期，次数不限。我们先冻结新的价格，再解除冻结或退回原来的付款。',
-    '如果我们接收不了你的宠物，或者由我们取消，全部退款。',
-    '解除冻结不是扣款，冻结多久从账单上消失，由你的银行决定。',
-  ],
 };
 
 export const CONCIERGE_COPY: Record<ConciergeLocale, ConciergeCopy> = { en: EN, zh: ZH };

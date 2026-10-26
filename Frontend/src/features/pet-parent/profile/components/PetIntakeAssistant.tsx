@@ -53,7 +53,7 @@ const fieldLabel = (key: string, copy: IntakeCopy): string =>
 const MEDICAL_FIELDS = ['allergies', 'medications'] as const;
 
 /**
- * The server's floor (MIN_INTAKE_LENGTH). Two characters, not ten: "体重是30千克" is a whole fact in
+ * The server's floor (MIN_INTAKE_LENGTH). Two characters, not ten: "the weight is 30 kg" in Chinese is a whole fact in
  * seven, and an English-sized minimum left the button greyed out with no reason given.
  */
 const MIN_DESCRIPTION_LENGTH = 2;

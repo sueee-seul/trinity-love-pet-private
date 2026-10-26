@@ -10,8 +10,8 @@ import type { ConciergeNeedsPatch } from './concierge.needs.js';
  * Keyword extraction for the rules assistant, in English and Chinese.
  *
  * It is deliberately modest: it recognises the phrasings a guest actually types or dictates
- * ("2 dogs", "两只猫", "12/10 to 15/10", "12 to 15 October", "the 12th of October to the 15th",
- * "10月12日到15日", "2026年10月12日到2026年10月15日") and leaves anything else for the checklist.
+ * ("2 dogs", "two cats" in Chinese, "12/10 to 15/10", "12 to 15 October", "the 12th of October to the 15th",
+ * and Chinese month-day ranges with or without the year) and leaves anything else for the checklist.
  * A missed phrase costs one extra question; a wrong guess would cost a wrong quote, so when in
  * doubt it extracts nothing. Relative phrases such as "next weekend" are never guessed, a detail
  * that could belong to any of several pets is asked about, and dates already set are only replaced
@@ -49,19 +49,19 @@ const MEDICATION_WORD =
 /** Clear "no medication" statements. */
 const MEDICATION_NO =
   /\b(?:no (?:meds|medication|medicine|pills|tablets)|not on (?:any )?(?:meds|medication|medicine|pills)|none of them (?:needs?|takes?|is on|are on)|neither (?:of them )?(?:needs?|takes?)|(?:does|do)n['’]?t (?:need|take) (?:any )?(?:meds|medication|medicine|pills|tablets))\b|不用吃药|没有(?:吃)?药|不吃药|无需用药|不需要(?:吃药|用药)|都不用吃药/i;
-/** Any other negation near a medication word ("isn't on meds", "不需要药物"): not a yes. */
+/** Any other negation near a medication word ("isn't on meds", "doesn't need medicine" in Chinese): not a yes. */
 const MEDICATION_NEGATED =
   /\b(?:no|not|none|never|without|\w+n['’]?t)\b[^.!?;]{0,30}\b(?:medication|medicine|meds|pills?|tablets?|insulin)\b|(?:不|没|无|别)[^，。！？,.!?]{0,4}(?:吃药|用药|药物|喂药)/i;
 const FIRST_TIME = /\bfirst (?:time|stay)\b|第一次/i;
-/** "one needs meds", "one of them is on pills", "only one is new here", "其中一只要吃药". */
+/** "one needs meds", "one of them is on pills", "only one is new here", "one of them takes medicine" in Chinese. */
 const SINGLES_ONE_OUT =
   /\b(?:only |just )?(?:one|1)(?: of (?:them|the \w+|my \w+|our \w+))? (?:needs|takes|is|has|gets|requires|will)\b|\bone of (?:them|the \w+|my \w+|our \w+)\b|其中一只|其中一个|有一只|一只(?:要|需要|得|在|是)/i;
-/** "both", "all of them", "they all", "两只都": the detail is for every pet. */
+/** "both", "all of them", "they all", "both of them" in Chinese: the detail is for every pet. */
 const COVERS_EVERY_PET =
   /\b(?:both|all of them|each of them|they all|they both|they|all (?:two|three|four|\d))\b|[两三四]只都|都要|都需要|每只|它们都|他们都/i;
 /** "she", "he", "it": one pet, but which one is not said. */
 const ONE_PET_PRONOUN = /\b(?:she|he|it|her|his)\b|[它她他](?!们)/i;
-/** "the dog", "my cats", "狗狗要": a species named as the one a detail is about. */
+/** "the dog", "my cats", "the dog needs" in Chinese: a species named as the one a detail is about. */
 const SPECIES_TARGETS: Array<{ species: ConciergeSpecies; pattern: RegExp }> = [
   {
     species: 'dog',
@@ -213,7 +213,7 @@ const slashDate = (match: RegExpMatchArray, today: string): string | null => {
   return match[3] ? toIsoDate(Number(match[3]), month, day) : resolveYear(month, day, today);
 };
 
-/** "2026年10月12日到2026年10月15日", "10月12日到15号", "12月28日到1月3日". */
+/** Chinese ranges: "12 October 2026 to 15 October 2026", "12 to 15 October", "28 Dec to 3 Jan". */
 const extractChineseRange = (text: string, today: string): DateRange | null => {
   const match = text.match(CHINESE_RANGE);
   if (!match) return null;
@@ -302,7 +302,7 @@ const countWord = (word: string | undefined): number | null => {
 };
 
 /**
- * "for 3 nights", "a week", "a fortnight", "住3晚", "一周". Days ("3 天") are left alone: a
+ * "for 3 nights", "a week", "a fortnight", and in Chinese "stay 3 nights" or "a week". Days ("3 days" in Chinese) are left alone: a
  * three-day stay can mean two nights or three, and a wrong guess changes the price.
  */
 const extractNights = (text: string): number | null => {
@@ -356,7 +356,7 @@ const addDays = (isoDate: string, days: number): string => {
   return date.toISOString().slice(0, 10);
 };
 
-/** "From 12 October for 3 nights", "10月12日开始住一周". */
+/** "From 12 October for 3 nights", or in Chinese "a week from 12 October". */
 const extractStartAndDuration = (text: string, today: string): DateRange | null => {
   const nights = extractNights(text);
   if (!nights) return null;

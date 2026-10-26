@@ -23,7 +23,8 @@ export interface AuthApiResult<T> {
 }
 
 interface GoogleConfig {
-  clientId?: string;
+  /** Null when Google sign-in is not set up on the server; the page then offers email only. */
+  clientId?: string | null;
 }
 
 interface AuthSession {
@@ -82,7 +83,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 };
 
 const isGoogleConfig = (value: unknown): value is GoogleConfig => {
-  return isRecord(value) && (value.clientId === undefined || typeof value.clientId === 'string');
+  return (
+    isRecord(value) &&
+    (value.clientId === undefined || value.clientId === null || typeof value.clientId === 'string')
+  );
 };
 
 const isEmailData = (value: unknown): value is { email?: string } => {

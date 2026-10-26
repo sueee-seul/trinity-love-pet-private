@@ -1,12 +1,8 @@
 /**
- * Which pets a manager checks before their stay is confirmed. Every other pet is confirmed the
- * moment the request is saved, once the room check under the booking lock has passed.
- *
- * New Zealand law does not ask for a manager to approve each booking. The Code of Welfare for
- * temporary housing of companion animals asks for checks when the animal is admitted (vaccination
- * proof, isolation when that is unknown), and staff make those at the desk. Medication is the one
- * case the owner keeps for a manager before the day (decided 2026-10-05): a wrong dose is the risk
- * a desk check cannot catch in time. The guest is told on the booking page when this applies.
+ * What a manager should know about a pet when deciding its request. Every request waits for a
+ * manager (owner decision 2026-10-14: nothing is booked or paid online; the manager approves or
+ * refuses each pet, and payment happens at the desk after the arrival health check). The reasons
+ * here are extra flags on top of that, so the manager sees why a request needs a closer look.
  */
 
 import type { ManagerReviewReason } from '../contracts/booking.review.contract.js';
@@ -18,7 +14,7 @@ export interface PetReviewFacts {
   needsMedication: boolean;
 }
 
-/** Why this pet waits for a manager; empty when it is confirmed at once. */
+/** What the manager should look at for this pet; empty when nothing stands out. */
 export const managerReviewReasons = (pet: PetReviewFacts): ManagerReviewReason[] =>
   pet.needsMedication ? ['medication'] : [];
 

@@ -9,7 +9,7 @@ import { removeDashes } from '../../common/utils/plain-punctuation.js';
  * value claims, so any sentence that talks about money (an amount, a currency, a rate per night,
  * a discount, or "cheapest"/"best value") is replaced as a whole with a pointer to the package
  * card, whose number comes from the pricing code. Dropping the sentence rather than the digits
- * means rewordings ("85 a night", "eighty-five dollars", "一晚八十五元") cannot slip through.
+ * means rewordings ("85 a night", "eighty-five dollars", or the same in Chinese) cannot slip through.
  * Plain numbers about dates, nights and pets are left alone.
  *
  * Dashes are removed first, so the price check reads the reply in the words the guest will see.
@@ -39,7 +39,8 @@ const MONEY_SIGNALS: RegExp[] = [
     'i',
   ),
   new RegExp(String.raw`${NUMBER}\s*(?:in total|total|each|all up|all-in)\b`, 'i'),
-  // "一晚85" is a price; "一共3晚" or "每天2次" is a count, so a unit after the number excludes it.
+  // In Chinese, "85 for a night" is a price; "3 nights in all" or "twice a day" is a count, so a
+  // unit after the number excludes it.
   new RegExp(
     String.raw`(?:一晚|每晚|每天|一天|共|一共|总共|合计|总价)\s*${NUMBER}(?![\d晚天只个日夜次位])`,
   ),

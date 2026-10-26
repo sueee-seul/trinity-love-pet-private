@@ -33,18 +33,19 @@ describe('GET /api/auth/google/config', () => {
 
     const response = callConfig();
 
-    expect(response.statusCode).toBe(503);
+    // A normal answer, so the browser console stays clean; the page shows email sign-in only.
+    expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
-      code: 503,
+      code: 200,
       msg: 'Google sign-in is not configured',
-      data: null,
+      data: { clientId: null },
     });
   });
 
   it('reports Google sign-in as not configured when the client ID is empty', () => {
     vi.stubEnv('GOOGLE_CLIENT_ID', '   ');
 
-    expect(callConfig().statusCode).toBe(503);
+    expect(callConfig().body).toMatchObject({ data: { clientId: null } });
   });
 
   it('returns a real Google client ID', () => {

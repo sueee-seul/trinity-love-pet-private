@@ -1,14 +1,12 @@
 import type { PortalLocale } from '../../i18n/portalLocale';
 import type {
-  AddOnResult,
   CancellationResult,
-  ChangeTimesResult,
-  ExtensionResult,
   RescheduleResult,
+  StayChangeRequest,
 } from '../../types/stayChanges';
 import type { InStayChangesCopy } from './inStayChangesCopy';
 import type { StayChangesCopy } from './stayChangesCopy';
-import { formatDay, formatDayAndClock, formatMoney } from './stayChangeRules';
+import { formatDay, formatMoney } from './stayChangeRules';
 
 /**
  * What a change did, kept rather than its words, so the notice on My stays follows a change of
@@ -17,9 +15,8 @@ import { formatDay, formatDayAndClock, formatMoney } from './stayChangeRules';
 export type StayChangeNotice =
   | { kind: 'cancelled'; result: CancellationResult; paid: boolean }
   | { kind: 'moved'; result: RescheduleResult }
-  | { kind: 'extended'; result: ExtensionResult }
-  | { kind: 'add_on'; result: AddOnResult }
-  | { kind: 'times'; result: ChangeTimesResult };
+  /** A change while the pet is staying was asked for; our manager decides it. */
+  | { kind: 'requested'; request: StayChangeRequest };
 
 export interface StayNoticeCopy {
   changes: StayChangesCopy['notice'];
@@ -44,28 +41,7 @@ export const stayChangeNoticeText = (
         ? copy.changes.movedPaid(startDay, total)
         : copy.changes.moved(startDay, total);
     }
-    case 'extended': {
-      const extended =
-        notice.result.settlement === 'desk' ? copy.inStay.extendedToBill : copy.inStay.extended;
-      return extended(
-        formatDay(notice.result.newEndDate, locale),
-        formatMoney(notice.result.amount),
-      );
-    }
-    case 'add_on': {
-      const added =
-        notice.result.settlement === 'desk' ? copy.inStay.addOnToBill : copy.inStay.addOnBooked;
-      return added(
-        notice.result.quantity,
-        notice.result.serviceName,
-        formatDay(notice.result.date, locale),
-        formatMoney(notice.result.amount),
-      );
-    }
-    case 'times':
-      return copy.inStay.timesChanged(
-        formatDayAndClock(notice.result.dropOffAt, locale),
-        formatDayAndClock(notice.result.pickUpAt, locale),
-      );
+    case 'requested':
+      return copy.inStay.requested;
   }
 };

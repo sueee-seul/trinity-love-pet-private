@@ -101,7 +101,7 @@ export interface LiveCareCopy {
     arrivalTitle: string;
     /** Shown on the current day before the update hour, when no update has come yet. */
     waiting: (time: string) => string;
-    /** "5 pm" or "下午 5 点", for the hour the parent chose (0 to 23). */
+    /** "5 pm", or the Chinese "5 o'clock in the afternoon", for the hour the parent chose (0 to 23). */
     updateHour: (hour: number) => string;
     sentAt: (time: string) => string;
     reportTitle: string;

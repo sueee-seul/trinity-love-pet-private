@@ -14,7 +14,7 @@ and was called Default. It is now called Simple.
 | Luxury   | Le Petit Palais, Maison Noir                                          |
 | Minimal  | Simple, Paper, Slate                                                  |
 
-**Romantic** and **luxury** are the four palettes from the "四季宠爱" design package, plus Milk
+**Romantic** and **luxury** are the four palettes from the "Four Seasons Pet Love" design package, plus Milk
 Cream and Maison Noir, added in September 2026. Each has its own illustration and motif, and no two
 share a picture. See [Theme pictures](#theme-pictures) for which picture each theme has and where
 it shows.
@@ -27,7 +27,7 @@ day is not always the place for that. The product owner removed the minimal pict
 (`NIGHT_MODE_BRAND_THEMES`) and put each last in its group. The product owner chose these two.
 Maison Noir also has a dark colour scheme, but it is shown as a luxury look, not as a night mode.
 
-**Default tag.** The pickers tag the page's default theme as "Default" (默认 on the landing page):
+**Default tag.** The pickers tag the page's default theme as "Default" (in Chinese too, on the landing page):
 Strawberry Cream everywhere, the Account Settings picker on staff pages included.
 
 **The pickers.** The landing page and Account Settings (`ThemeSettingsPicker`, also in the
@@ -65,11 +65,11 @@ too, so a theme is never called two things.
 
 | Theme (key)                     | Package name         | Character                                                           |
 | ------------------------------- | -------------------- | ------------------------------------------------------------------- |
-| Simple (`simple`)               | 蜜桃奶油             | The apricot palette the product already had. Was named Default      |
-| Strawberry Cream (`strawberry`) | 奶油草莓             | Strawberry cream, bows, soft hand-drawn edges. The customer default |
-| Moonlight Sleepover             | 月光晚安             | Indigo night and lavender. A dark theme                             |
-| Mint Secret Garden              | 薄荷花园             | Sage green, daisies, plant-journal feel                             |
-| Le Petit Palais                 | 皇家宠爱             | Champagne gold and emerald, pearl and rose detailing                |
+| Simple (`simple`)               | Peach Cream          | The apricot palette the product already had. Was named Default      |
+| Strawberry Cream (`strawberry`) | Cream Strawberry     | Strawberry cream, bows, soft hand-drawn edges. The customer default |
+| Moonlight Sleepover             | Moonlight Goodnight  | Indigo night and lavender. A dark theme                             |
+| Mint Secret Garden              | Mint Garden          | Sage green, daisies, plant-journal feel                             |
+| Le Petit Palais                 | Royal Pet Love       | Champagne gold and emerald, pearl and rose detailing                |
 | Milk Cream (`milk-cream`)       | (not in the package) | Milk white and gold, with a gilded frame                            |
 | Maison Noir (`noir`)            | (not in the package) | Black velvet and champagne gold in art deco lines. A dark theme     |
 
@@ -619,8 +619,8 @@ How it is built:
   wrong place.
 - The hero glow and stars sit over the picture half of the band, never under the copy. Putting them
   under the copy would need a stacking context on the band, which would trap the rate card popover.
-- The decorated title word is `hero.titleAccent` in the landing copy (`happy`, and `开心` in
-  Chinese). `AccentedTitle` wraps it, and a screen reader still hears the whole title.
+- The decorated title word is `hero.titleAccent` in the landing copy (`happy`, and its Chinese
+  equivalent). `AccentedTitle` wraps it, and a screen reader still hears the whole title.
 
 ### Press and impact
 

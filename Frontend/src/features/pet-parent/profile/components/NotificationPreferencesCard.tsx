@@ -14,7 +14,7 @@ import { Button, FIELD_LABEL_CLASS, SectionCard, inputClass } from './ProfileUi'
 
 const HOURS_OF_DAY = Array.from({ length: 24 }, (_, hour) => hour);
 
-/** Every hour of the day, worded in the page's language ("5:00 pm", "下午5:00"). */
+/** Every hour of the day, worded in the page's language ("5:00 pm", or with the Chinese word for afternoon). */
 function HourSelect({
   id,
   value,

@@ -214,3 +214,61 @@ export interface RescheduleResult extends ReschedulePreview {
   /** Whether the new price is held (or charged) now; false while awaiting reapproval. */
   held: boolean;
 }
+
+// ----- Change requests while the pet is staying -------------------------------------------------
+
+/**
+ * Owner decision 2026-10-14: a change to a stay under way is a request. The parent asks (My Stays
+ * or the chat), a manager approves or refuses it, and only an approved request changes the
+ * booking, its bill and the care tasks. Mirrored by Frontend .../pet-parent/types/stayChanges.ts.
+ */
+export const STAY_CHANGE_REQUEST_KINDS = ['extend', 'early_check_out', 'add_on', 'times'] as const;
+export type StayChangeRequestKind = (typeof STAY_CHANGE_REQUEST_KINDS)[number];
+
+export const STAY_CHANGE_REQUEST_STATUSES = [
+  'pending',
+  'approved',
+  'refused',
+  'cancelled',
+] as const;
+export type StayChangeRequestStatus = (typeof STAY_CHANGE_REQUEST_STATUSES)[number];
+
+/** What was asked, by kind (stored in `stay_change_requests.details`). */
+export type StayChangeRequestDetails =
+  | { kind: 'extend'; endDate: string }
+  | { kind: 'add_on'; serviceId: string; serviceName: string; date: string; quantity: number }
+  | { kind: 'times'; dropOffTime?: string; pickUpTime?: string }
+  | { kind: 'early_check_out' };
+
+export interface StayChangeRequestView {
+  id: string;
+  bookingId: string;
+  /** The pet an add-on or a time is for; null for a change to the whole stay. */
+  bookingPetId: string | null;
+  details: StayChangeRequestDetails;
+  /** What it costs, paid at the desk at pick-up; null when it costs nothing. */
+  quotedAmount: number | null;
+  status: StayChangeRequestStatus;
+  refusalReason: string | null;
+  /** One line for people, e.g. "Extend Max's stay to Sat 17 Oct ($55.00)". */
+  summary: string;
+  createdAt: string;
+  decidedAt: string | null;
+}
+
+/** A request as the manager's list shows it: who asked and which booking. */
+export interface ManagerStayChangeRequestView extends StayChangeRequestView {
+  reference: string;
+  ownerName: string;
+  petNames: string[];
+}
+
+/** PATCH /api/admin/bookings/change-requests/:id/refuse: why, which the parent reads. */
+export const refuseStayChangeSchema = z
+  .object({ reason: z.string().trim().min(3, 'Say why the change cannot be made').max(500) })
+  .strict();
+
+/** GET /api/admin/bookings/change-requests?status=: pending by default, or every request. */
+export const stayChangeListQuerySchema = z
+  .object({ status: z.enum(['pending', 'all']).default('pending') })
+  .strict();

@@ -1,6 +1,5 @@
 import type { ConciergeNeeds } from '../../contracts/concierge.contract.js';
 import type { BookingServiceRecord } from '../../repositories/petparent.booking.repository.js';
-import { verifyAcceptedQuote } from '../../services/concierge/concierge.tokens.js';
 
 /** A small but complete catalogue: three rooms, two foods, and one add-on of each kind. */
 export const CATALOGUE: BookingServiceRecord[] = [
@@ -91,7 +90,3 @@ export const readyNeeds = (overrides: Partial<ConciergeNeeds> = {}): ConciergeNe
 });
 
 export const TEST_SIGNING_SECRET = 'test-concierge-signing-secret-at-least-32-bytes';
-
-/** The card setup the development fake confirms for an accepted quote (fake_seti_<acceptance>). */
-export const fakeCardSetupFor = async (acceptedQuoteToken: string): Promise<string> =>
-  `fake_seti_${(await verifyAcceptedQuote(acceptedQuoteToken)).acceptanceId}`;

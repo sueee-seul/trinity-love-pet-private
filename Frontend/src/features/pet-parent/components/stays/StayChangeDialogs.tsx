@@ -50,7 +50,7 @@ export function StayChangeDialogs({
           stay={stay}
           petNames={petNames}
           onClose={onClose}
-          onExtended={(result) => onChanged({ kind: 'extended', result })}
+          onRequested={(request) => onChanged({ kind: 'requested', request })}
         />
       );
     case 'add-on':
@@ -58,7 +58,7 @@ export function StayChangeDialogs({
         <AddOnDialog
           stay={stay}
           onClose={onClose}
-          onAdded={(result) => onChanged({ kind: 'add_on', result })}
+          onRequested={(request) => onChanged({ kind: 'requested', request })}
         />
       );
     case 'times':
@@ -66,7 +66,7 @@ export function StayChangeDialogs({
         <ChangeTimesDialog
           stay={stay}
           onClose={onClose}
-          onChanged={(result) => onChanged({ kind: 'times', result })}
+          onRequested={(request) => onChanged({ kind: 'requested', request })}
         />
       );
   }

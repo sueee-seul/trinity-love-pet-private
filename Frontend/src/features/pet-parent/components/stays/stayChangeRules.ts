@@ -65,11 +65,11 @@ export const addDays = (isoDate: string, days: number): string => {
   return date.toISOString().slice(0, 10);
 };
 
-/** "Sat 12 Dec" ("12月12日周六") for a "2026-12-12" date. */
+/** "Sat 12 Dec" (month-day then weekday in Chinese) for a "2026-12-12" date. */
 export const formatDay = (isoDate: string, locale: PortalLocale = 'en'): string =>
   DAY_LABELS[locale].format(new Date(`${isoDate}T00:00:00Z`)).replace(',', '');
 
-/** "Tue 15 Dec 16:00" ("12月15日周二 16:00"): the Auckland day and wall-clock time of an instant. */
+/** "Tue 15 Dec 16:00" (month-day, weekday and time in Chinese): the Auckland day and wall-clock time of an instant. */
 export const formatDayAndClock = (instant: string, locale: PortalLocale = 'en'): string =>
   `${formatDay(aucklandDateOf(instant), locale)} ${aucklandClockOf(instant)}`;
 
@@ -79,7 +79,8 @@ export const formatMoney = (amount: number): string => `$${amount.toFixed(2)}`;
 export const isPaid = (stay: PetStay): boolean =>
   stay.card?.status === 'succeeded' && stay.card.capturedAmount === null;
 
-// How each language joins a list: "Biscuit, Mochi and Rex", "Biscuit、Mochi 和 Rex".
+// How each language joins a list: "Biscuit, Mochi and Rex", or with the Chinese list comma
+// and "and" in Chinese.
 const LIST_JOINERS: PortalCopy<{ between: string; beforeLast: string }> = {
   en: { between: ', ', beforeLast: ' and ' },
   zh: { between: '、', beforeLast: ' 和 ' },
@@ -138,20 +139,23 @@ export const isOnBooking = (stay: Pick<PetStay, 'status'>): boolean =>
   stay.status === 'waiting_for_review' || stay.status === 'approved';
 
 /**
- * Made with a saved card, not settled, before drop-off: the guest can withdraw the request or
- * cancel the approved stay here. A stay paid at request ('succeeded', nothing settled) is open too:
+ * Before drop-off, the guest can withdraw the request or cancel the approved stay here. A request
+ * made without a card (nothing is paid online) is always open; an older stay with a card is open
+ * while its card is not settled. A stay paid at request ('succeeded', nothing settled) is open too:
  * cancelling it refunds what is not owed.
  */
 export const canCancelOnline = (stay: PetStay, now: Date = new Date()): boolean => {
   const { card } = stay;
+  const cardOpen =
+    card === null ||
+    (card.capturedAmount === null &&
+      (card.status === 'pending' ||
+        card.status === 'authorized' ||
+        card.status === 'failed' ||
+        card.status === 'succeeded'));
   return (
     isOnBooking(stay) &&
-    card !== null &&
-    card.capturedAmount === null &&
-    (card.status === 'pending' ||
-      card.status === 'authorized' ||
-      card.status === 'failed' ||
-      card.status === 'succeeded') &&
+    cardOpen &&
     stay.checkInOutcome === null &&
     now.getTime() < new Date(stay.dropOffAt).getTime()
   );

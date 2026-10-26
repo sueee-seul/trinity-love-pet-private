@@ -41,19 +41,19 @@ const ZH_TIME = new Intl.DateTimeFormat('zh-CN', {
 const part = (parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): string =>
   parts.find((item) => item.type === type)?.value ?? '';
 
-/** "12月13日（周日）" */
+/** The Chinese month-day with the weekday, e.g. "13 Dec (Sun)". */
 const zhDay = (instant: Date): string => {
   const parts = ZH_DAY.formatToParts(instant);
   return `${part(parts, 'month')}月${part(parts, 'day')}日（${part(parts, 'weekday')}）`;
 };
 
-/** "下午6:05" */
+/** The Chinese time with its "afternoon" word, e.g. "6:05 pm". */
 const zhTime = (instant: Date): string => {
   const parts = ZH_TIME.formatToParts(instant);
   return `${part(parts, 'dayPeriod')}${part(parts, 'hour')}:${part(parts, 'minute')}`;
 };
 
-/** "5 pm" or "下午5点", for the arrival note's promise of the full update. */
+/** "5 pm", or the Chinese "5 o'clock in the afternoon", for the arrival note's promise of the full update. */
 const enHour = (hour: number): string =>
   hour === 0 ? '12 am' : hour === 12 ? '12 pm' : hour < 12 ? `${hour} am` : `${hour - 12} pm`;
 const zhHour = (hour: number): string =>

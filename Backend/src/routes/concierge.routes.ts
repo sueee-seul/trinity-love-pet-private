@@ -6,7 +6,6 @@ import {
   getConciergeStatusHandler,
   getConciergeTermsHandler,
   postConciergeAcceptQuote,
-  postConciergeCardSetup,
   postConciergeChat,
   postConciergeCheckout,
   postConciergePrice,
@@ -57,7 +56,6 @@ router.post(
 /** Reads a spoken or typed description into the booking form; it calls the model, so a tight budget. */
 const readerBudget = rateLimit({ name: 'concierge-details-reader', limit: 6, windowMs: 60_000 });
 router.post('/details/read', requireTrustedOrigin, readerBudget, postConciergeDetailsRead);
-router.post('/card-setup', requireTrustedOrigin, writeBudget, postConciergeCardSetup);
 router.post('/checkout', requireTrustedOrigin, writeBudget, postConciergeCheckout);
 
 export default router;

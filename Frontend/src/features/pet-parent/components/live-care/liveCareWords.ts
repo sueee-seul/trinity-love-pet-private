@@ -57,7 +57,7 @@ export const taskTitleText = (title: string, category: Category): string => {
   return medicine ? `用药：${medicine}` : CATEGORIES_IN_CHINESE[category];
 };
 
-/** "9:00 AM" as "上午 9:00", "3:30 PM" as "下午 3:30". */
+/** "9:00 AM" and "3:30 PM" with the Chinese words for morning and afternoon in front. */
 export const clockText = (time: string): string => {
   const [, hour, minute, half] = CLOCK.exec(time) ?? [];
   if (!hour || !minute) return time;

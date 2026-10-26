@@ -13,9 +13,11 @@ import {
 import {
   getAddOns,
   getExtension,
+  getStayChangeRequests,
   patchTimes,
   postAddOn,
   postExtension,
+  postWithdrawStayChangeRequest,
 } from '../controllers/petparent.in-stay.controller.js';
 import { requirePetParent } from '../common/middlewares/auth.middleware.js';
 
@@ -31,11 +33,18 @@ router.get('/bookings/:bookingId/cancellation', requirePetParent, getCancellatio
 router.post('/bookings/:bookingId/cancel', requirePetParent, cancelStay);
 router.get('/bookings/:bookingId/reschedule', requirePetParent, getReschedule);
 router.post('/bookings/:bookingId/reschedule', requirePetParent, rescheduleStay);
-// While the pet is staying: priced first (GET), then applied with the amount the parent saw (POST).
+// While the pet is staying: priced first (GET), then asked for with the amount the parent saw
+// (POST/PATCH). Each is a request a manager approves or refuses; nothing changes until then.
 router.get('/bookings/:bookingId/extension', requirePetParent, getExtension);
 router.post('/bookings/:bookingId/extension', requirePetParent, postExtension);
 router.get('/bookings/:bookingId/add-ons', requirePetParent, getAddOns);
 router.post('/bookings/:bookingId/pets/:bookingPetId/add-ons', requirePetParent, postAddOn);
 router.patch('/bookings/:bookingId/pets/:bookingPetId/times', requirePetParent, patchTimes);
+router.get('/stay-change-requests', requirePetParent, getStayChangeRequests);
+router.post(
+  '/stay-change-requests/:requestId/withdraw',
+  requirePetParent,
+  postWithdrawStayChangeRequest,
+);
 
 export default router;

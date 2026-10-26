@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import {
   conciergeAcceptQuoteSchema,
-  conciergeCardSetupSchema,
   conciergeChatRequestSchema,
   conciergeCheckoutSchema,
   conciergePriceRequestSchema,
@@ -24,14 +23,12 @@ import {
   priceConciergeSelection,
   runConciergeTurn,
 } from '../services/concierge/concierge.service.js';
-import { createConciergeCardSetup } from '../services/concierge/concierge.card-guarantee.js';
 import { checkoutConciergeBooking } from '../services/concierge/concierge.checkout.js';
 import {
   getConciergeStatus,
   readCapacityConfigured,
 } from '../services/concierge/concierge.status.js';
 import { getConciergeTerms } from '../services/concierge/concierge.terms.js';
-import { requireCardProcessor } from '../services/payments/card-processor.factory.js';
 import {
   canBookAsPetOwner,
   confirmEmailAndResolveIdentity,
@@ -205,26 +202,6 @@ export const postConciergeVerificationConfirm = async (
       result = { status: 'verified_new_email', verificationToken: identity.verificationToken };
     }
     res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-/** A card setup for the details step; the card itself goes from the browser to the processor. */
-export const postConciergeCardSetup = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const request = conciergeCardSetupSchema.parse(req.body);
-    const signedIn = await optionalPetOwner(req);
-    const setup = await createConciergeCardSetup(
-      request,
-      { signedInEmail: signedIn?.email },
-      requireCardProcessor(),
-    );
-    res.status(201).json(setup);
   } catch (error) {
     next(error);
   }

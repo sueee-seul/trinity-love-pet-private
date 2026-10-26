@@ -7,6 +7,8 @@ import { fetchMyBookings } from '../../api/bookingApi';
 import type { ManagerReviewStatus, StayStatus, PetStay } from '../../types/stays';
 
 vi.mock('../../api/bookingApi', () => ({ fetchMyBookings: vi.fn() }));
+// The change-request list reads its own data; these tests are about the stays.
+vi.mock('../../api/stayChangesApi', () => ({ fetchStayChangeRequests: vi.fn(async () => []) }));
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const daysFromNow = (days: number): string => new Date(Date.now() + days * DAY_MS).toISOString();

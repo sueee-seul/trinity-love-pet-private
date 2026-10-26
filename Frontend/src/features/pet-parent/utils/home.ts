@@ -43,7 +43,7 @@ export function bookingLinkForPet(petId: string): string {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** "Max", "Max and Luna", "Max, Luna and Rex"; "Max、Luna 和 Rex" in Chinese. */
+/** "Max", "Max and Luna", "Max, Luna and Rex"; with the Chinese list comma and "and" in Chinese. */
 export function joinNames(
   names: string[],
   conjunction: NameConjunction = 'and',

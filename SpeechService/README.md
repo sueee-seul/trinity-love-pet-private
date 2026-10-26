@@ -65,7 +65,7 @@ All are optional environment variables.
 
 Hotwords are off on purpose. Pet-care hotwords fixed a few Chinese homophones on clean test clips,
 but on a real laptop microphone Whisper repeated them as if they were spoken, for example
-"鸡肉过敏" (allergic to chicken) during a pause. A made-up allergy is worse than a misheard word
+"allergic to chicken" in Chinese during a pause. A made-up allergy is worse than a misheard word
 that the owner can see and fix.
 
 ## API

@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ConciergeCheckoutRequest } from '../contracts/concierge.contract.js';
 import { findUserByEmail, type DatabaseAuthUser } from '../repositories/auth.repository.js';
-import { createConciergeCardSetup } from '../services/concierge/concierge.card-guarantee.js';
 import { resolveOwner } from '../services/concierge/concierge.checkout-checks.js';
-import { signAcceptedQuote, type SignedQuote } from '../services/concierge/concierge.tokens.js';
-import { FakeCardProcessor } from '../services/payments/fake-card-processor.js';
 import { TEST_SIGNING_SECRET } from './fixtures/concierge.fixtures.js';
 
 vi.mock('../config/database.js', () => ({ pool: { query: vi.fn(), connect: vi.fn() } }));
@@ -12,34 +9,6 @@ vi.mock('../repositories/auth.repository.js', () => ({ findUserByEmail: vi.fn() 
 
 const OWNER_ID = '00000000-0000-4000-8000-000000000301';
 const STRONG_PASSWORD = 'Sunny-days-42';
-
-const quote: SignedQuote = {
-  name: 'Garden suite',
-  selection: {
-    pets: [
-      {
-        roomId: '11111111-1111-4111-8111-000000000002',
-        foodId: '11111111-1111-4111-8111-000000000004',
-        addonIds: [],
-      },
-    ],
-  },
-  startDate: '2026-12-12',
-  endDate: '2026-12-15',
-  nights: 3,
-  pets: [{ species: 'dog', size: 'large', needsMedication: false, firstTimeBoarding: true }],
-  lines: [
-    {
-      serviceId: '11111111-1111-4111-8111-000000000002',
-      petIndex: 0,
-      quantity: 1,
-      unitPrice: 68,
-      lineTotal: 204,
-    },
-  ],
-  total: 204,
-  currency: 'NZD',
-};
 
 const existingUser = (overrides: Partial<DatabaseAuthUser> = {}): DatabaseAuthUser => ({
   id: OWNER_ID,
@@ -126,33 +95,5 @@ describe('a first-time guest makes their account at checkout', () => {
     await expect(resolveOwner({} as ConciergeCheckoutRequest, {})).rejects.toMatchObject({
       code: 'CONCIERGE_EMAIL_UNVERIFIED',
     });
-  });
-
-  it('saves a first-time guest’s card for their new email only', async () => {
-    const processor = new FakeCardProcessor();
-    const createCardSetup = vi.spyOn(processor, 'createCardSetup');
-    const acceptedQuoteToken = await signAcceptedQuote(quote, new Date());
-
-    await expect(
-      createConciergeCardSetup(
-        { acceptedQuoteToken, guestEmail: 'ava@example.test' },
-        {},
-        processor,
-      ),
-    ).resolves.toMatchObject({ processor: 'fake' });
-    expect(createCardSetup).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'ava@example.test' }),
-    );
-
-    vi.mocked(findUserByEmail).mockResolvedValue(existingUser());
-    createCardSetup.mockClear();
-    await expect(
-      createConciergeCardSetup(
-        { acceptedQuoteToken, guestEmail: 'ava@example.test' },
-        {},
-        processor,
-      ),
-    ).rejects.toMatchObject({ code: 'CONCIERGE_ACCOUNT_EXISTS' });
-    expect(createCardSetup).not.toHaveBeenCalled();
   });
 });

@@ -21,6 +21,7 @@ import {
 } from '../repositories/booking.change.repository.js';
 import {
   withLockedBooking,
+  type GuaranteePayment,
   type LockedBooking,
   type PetAtTheDesk,
 } from '../repositories/booking.check-in.repository.js';
@@ -166,7 +167,8 @@ const planReschedule = async (
     countsAsDateChange: !options.exception,
     newDropOffAt,
     holdAt: holdTimeFor({ bookedAt: options.now, dropOffAt: newDropOffAt }),
-    paysNow: booking.paysAtRequest,
+    // A request made without a card has nothing to hold or charge, whatever its terms.
+    paysNow: booking.paysAtRequest && stay.payment !== null,
     pets: booking.pets.map((pet) => {
       const movedPet = moved.find((candidate) => candidate.bookingPetsUuid === pet.bookingPetsUuid);
       return movedPet
@@ -206,12 +208,11 @@ const declinedForNewDates = (): AppError =>
  */
 const applyPaidReschedule = async (
   booking: LockedBooking,
-  stay: ChangeableStay,
+  old: GuaranteePayment,
   plan: ReschedulePlan,
   cards: CardProcessor,
   client: PoolClient,
 ): Promise<void> => {
-  const old = stay.payment;
   const hold = await withProcessor(() =>
     cards.placeHold({
       paymentMethodId: old.paymentMethodId,
@@ -252,7 +253,7 @@ const applyPaidReschedule = async (
 /** A guest cannot move a stay whose card was already refused: the team sorts that out. */
 const guestChangeableStay = (booking: LockedBooking, ownerId: string): ChangeableStay => {
   const stay = changeableStay(booking, ownerId);
-  if (stay.payment.status === 'failed') {
+  if (stay.payment?.status === 'failed') {
     throw new AppError(
       "We couldn't hold your card for this stay, so its dates can't be changed online. Please contact our team.",
       'BOOKING_CARD_FAILED',
@@ -265,22 +266,24 @@ const guestChangeableStay = (booking: LockedBooking, ownerId: string): Changeabl
 /** The old hold no longer matches the dates: release it, and let the job hold the new ones. */
 const applyReschedule = async (
   bookingId: string,
-  stay: ChangeableStay,
+  payment: GuaranteePayment | null,
   plan: ReschedulePlan,
-  cardsFor: () => CardProcessor,
+  cardsFor: (payment: GuaranteePayment) => CardProcessor,
   client: PoolClient,
   returnToReview: boolean,
 ): Promise<void> => {
   await moveStay(client, bookingId, plan.moved, plan.countsAsDateChange, returnToReview);
-  await renewGuarantee(client, stay.payment.paymentId, {
+  // A request made without a card only moves its dates.
+  if (!payment) return;
+  await renewGuarantee(client, payment.paymentId, {
     status: 'pending',
     amount: plan.total,
     // Retain the released intent for a fresh hold idempotency key after reapproval.
-    paymentIntentId: stay.payment.paymentIntentId,
+    paymentIntentId: payment.paymentIntentId,
   });
-  const oldHold = stay.payment.paymentIntentId;
-  if (stay.payment.status === 'authorized' && oldHold) {
-    await withProcessor(() => cardsFor().releaseHold(oldHold));
+  const oldHold = payment.paymentIntentId;
+  if (payment.status === 'authorized' && oldHold) {
+    await withProcessor(() => cardsFor(payment).releaseHold(oldHold));
   }
 };
 
@@ -322,14 +325,15 @@ const moveBooking = async (
       RESCHEDULE_PRICE_CHANGED,
       'The price for these dates has changed since you checked it. Please look at the new total and confirm again.',
     );
-    const cardsFor = (): CardProcessor => processorFor(stay.payment, dependencies.cardProcessor);
+    const cardsFor = (payment: GuaranteePayment): CardProcessor =>
+      processorFor(payment, dependencies.cardProcessor);
     // Care plans are found by the stay's dates, so the old plan goes before the new dates are
     // written, in the same transaction: a failed move keeps both the dates and the plan.
     for (const pet of stay.pets) await deleteTasksForBookingPet(pet.bookingPetsUuid, client);
-    if (plan.paysNow) {
-      await applyPaidReschedule(booking, stay, plan, cardsFor(), client);
+    if (plan.paysNow && stay.payment) {
+      await applyPaidReschedule(booking, stay.payment, plan, cardsFor(stay.payment), client);
     } else {
-      await applyReschedule(bookingId, stay, plan, cardsFor, client, !exception);
+      await applyReschedule(bookingId, stay.payment, plan, cardsFor, client, !exception);
     }
     // A paid stay keeps its decisions; an older one keeps them only when staff move it.
     const keepsDecisions = plan.paysNow || exception;

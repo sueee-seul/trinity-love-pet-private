@@ -12,7 +12,6 @@ import type {
 import {
   approvedBody,
   backInReviewBody,
-  bookingConfirmedBody,
   datesChangedBody,
   managerDatesChangedBody,
   managerRequestBody,
@@ -20,6 +19,7 @@ import {
   requestReceivedBody,
   type PlacedPet,
 } from './booking.notification.messages.js';
+import { postBookingNoticeToChat } from './booking.chat-notices.js';
 import { sendBookingNoticeEmail } from './booking.transaction-emails.js';
 import { toConfirmationNumber } from './petparent.booking.js';
 
@@ -49,10 +49,10 @@ const recordSafely = async (
 };
 
 /**
- * Tells the parent what checkout did: every stay confirmed, or which ones a manager checks first
- * and why. Managers hear only about the stays they must check. Called right after checkout has
- * saved the booking, with the pets in quote order. Never throws, so a guest whose booking was
- * saved always gets their receipt, which carries a copy of the terms they agreed to.
+ * Tells the parent their request arrived and waits for our manager, and tells every manager there
+ * is a request to decide. Called right after checkout has saved the booking, with the pets in
+ * quote order. Never throws, so a guest whose request was saved always gets their receipt, which
+ * carries a copy of the terms they agreed to.
  */
 export const notifyBookingPlaced = async (
   bookingId: string,
@@ -73,31 +73,21 @@ export const notifyBookingPlaced = async (
   // The names in quote order, as the guest listed them; the saved rows share one insert time.
   const subject = { ...found, petNames: pets.map((pet) => pet.name) };
   const reference = toConfirmationNumber(bookingId);
-  const waiting = pets.filter((pet) => pet.reasons.length > 0);
-  const parentNotice: ParentNoticeDraft =
-    waiting.length === 0
-      ? {
-          ownerId: subject.ownerId,
-          bookingId,
-          kind: 'booking_approved',
-          body: bookingConfirmedBody(subject, reference),
-        }
-      : {
-          ownerId: subject.ownerId,
-          bookingId,
-          kind: 'booking_request_received',
-          body: requestReceivedBody(subject, reference, pets),
-        };
+  const parentNotice: ParentNoticeDraft = {
+    ownerId: subject.ownerId,
+    bookingId,
+    kind: 'booking_request_received',
+    body: requestReceivedBody(subject, reference),
+  };
   await recordSafely(parentNotice.kind, bookingId, () => recordParentNotice(parentNotice));
-  if (waiting.length > 0) {
-    await recordSafely('booking_request_created', bookingId, () =>
-      recordManagerRequestNotices({
-        bookingId,
-        body: managerRequestBody(subject, reference, waiting),
-      }),
-    );
-  }
+  await recordSafely('booking_request_created', bookingId, () =>
+    recordManagerRequestNotices({
+      bookingId,
+      body: managerRequestBody(subject, reference, pets),
+    }),
+  );
   void sendBookingNoticeEmail({ ...parentNotice, withAgreedTerms: true });
+  void postBookingNoticeToChat(parentNotice);
 };
 
 /**

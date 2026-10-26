@@ -29,7 +29,6 @@ vi.mock('../api/conciergeApi', () => ({
     chat: vi.fn(),
     priceSelection: vi.fn(),
     acceptQuote: vi.fn(),
-    cardSetup: vi.fn(),
     checkout: vi.fn(),
     status: vi.fn(),
     rates: vi.fn(),
@@ -161,7 +160,7 @@ describe('the request receipt on the Sent screen', () => {
     expect(value('Check-out')).toContain('4:00 pm');
     expect(value('Stay')).toContain('Deluxe suite, House food and Outdoor walk');
     expect(value('Extras')).toContain('Outdoor walk');
-    expect(value('Total, held on your card')).toContain('$230.00');
+    expect(value('Total, paid at the desk')).toContain('$230.00');
     expect(within(receipt()).getByText('includes GST of $30.00')).toBeInTheDocument();
   });
 
@@ -173,11 +172,13 @@ describe('the request receipt on the Sent screen', () => {
     expect(screen.queryByText('Boarding pass')).not.toBeInTheDocument();
     expect(
       within(receipt()).getByText(
-        'A stay waiting for review is not booked yet. We will not take any money for a pet we cannot take.',
+        'A stay waiting for review is not booked yet. We will tell you here, in your notifications and in the chat, once our manager decides.',
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText('A confirmed stay has its boarding pass in My stays.'),
+      screen.getByText(
+        'Once a stay is approved, its boarding pass is in My stays. On the day, we do a quick health check at the desk and you pay there.',
+      ),
     ).toBeInTheDocument();
   });
 
@@ -236,13 +237,17 @@ describe('the request receipt on the Sent screen', () => {
     expect(value('离店')).toContain('下午4:00');
     expect(value('住宿')).toContain('豪华套房、店内干粮、户外散步');
     expect(value('附加服务')).toContain('户外散步');
-    expect(value('总价（已在卡上冻结）')).toContain('$230.00');
+    expect(value('总价（到店在前台支付）')).toContain('$230.00');
     expect(
       within(receipt('申请回执')).getByText(
-        '等待审核的住宿还没有预约成功。我们接收不了的宠物，不会收取任何费用。',
+        '等待审核的住宿还没有预约成功。经理决定后，我们会通过通知和聊天告诉你。',
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText('已确认的住宿，住宿凭证在“我的住宿”里。')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        '住宿批准后，住宿凭证在“我的住宿”里。入住当天我们先在前台做简单的健康检查，然后你在前台付款。',
+      ),
+    ).toBeInTheDocument();
     expect(englishWordsIn(document.body, ['Biscuit', 'Mochi', 'PB', 'AAAAAA'])).toEqual([]);
   });
 

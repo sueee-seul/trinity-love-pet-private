@@ -28,21 +28,12 @@ import {
 import { reviewDeadlineFor } from '../booking.fee-policy.js';
 import { notifyBookingPlaced } from '../booking.notifications.js';
 import { fillPetProfilesFromBooking } from './concierge.pet-profile.js';
-import type { CardProcessor } from '../payments/card-processor.js';
-import { requireCardProcessor } from '../payments/card-processor.factory.js';
 import { toConfirmationNumber } from '../petparent.booking.js';
 import { conciergeAcceptances, type AcceptanceRegistry } from './concierge.acceptance-registry.js';
-import { readGuaranteeCard } from './concierge.card-guarantee.js';
 import { toBookingPets } from './concierge.checkout-pets.js';
-import {
-  chargeConfirmedRequest,
-  holdRequestPrice,
-  releaseUnusedHold,
-} from './concierge.checkout-hold.js';
 import {
   decidePetReviews,
   overallStatus,
-  planCareForConfirmedPets,
   type PetReviewDecision,
 } from './concierge.checkout-review.js';
 import {
@@ -59,20 +50,15 @@ import { verifyAcceptedQuote, type SignedQuote } from './concierge.tokens.js';
 export type { CheckoutIdentity } from './concierge.checkout-checks.js';
 
 /**
- * Turns an accepted quote into a booking request, guaranteed by a saved card.
+ * Turns an accepted quote into a booking request. Nothing is paid or held online (owner decision
+ * 2026-10-14): every pet waits for our manager, who approves or refuses it, and the guest pays at
+ * the desk after the arrival health check.
  *
  * The guest is identified either by their session (already signed in) or by a verified-email
  * token; an account is created only for a verified email that has none. The request is recorded
- * at the prices the guest agreed to; checkout stops if a quoted service is no longer offered, a
- * night of the stay is full, or the saved card is not confirmed for this request.
- *
- * Each pet is confirmed at once, unless a manager checks its stay first (a pet on medication;
- * see booking.review-rules.ts). A confirmed
- * stay is real at that moment: its room was checked under the lock, so calling it confirmed is
- * true (Fair Trading Act 1986 s9, s11). A waiting stay is never called booked. The full price is
- * held on the card before the request is recorded (a declined card books nothing); when every pet
- * is confirmed it is charged at once, otherwise once our manager has decided, at most 24 hours
- * later. Capacity is checked before anything is created and again inside the booking transaction
+ * at the prices the guest agreed to; checkout stops if a quoted service is no longer offered or a
+ * night of the stay is full. A waiting stay is never called booked (Fair Trading Act 1986 s9,
+ * s11). Capacity is checked before anything is created and again inside the booking transaction
  * under a lock, so two guests cannot both ask for the last place.
  *
  * Each acceptance books once: a repeat submission is refused with the reference of the request it
@@ -82,13 +68,11 @@ export type { CheckoutIdentity } from './concierge.checkout-checks.js';
 
 export interface CheckoutDependencies {
   acceptances?: AcceptanceRegistry;
-  cardProcessor?: CardProcessor;
   now?: () => Date;
 }
 
 interface BookingContext {
   acceptanceId: string;
-  cardProcessor: CardProcessor;
   now: Date;
 }
 
@@ -160,7 +144,6 @@ export const checkoutConciergeBooking = async (
   identity: CheckoutIdentity,
   dependencies: CheckoutDependencies = {},
 ): Promise<ConciergeCheckoutResponse & { ownerId: string }> => {
-  const cardProcessor = dependencies.cardProcessor ?? requireCardProcessor();
   const acceptances = dependencies.acceptances ?? conciergeAcceptances;
   const { quote, acceptanceId } = await verifyAcceptedQuote(request.acceptedQuoteToken);
   assertPetsMatchQuote(request, quote);
@@ -180,7 +163,6 @@ export const checkoutConciergeBooking = async (
   try {
     const result = await bookAcceptedQuote(request, identity, quote, {
       acceptanceId,
-      cardProcessor,
       now: (dependencies.now ?? ((): Date => new Date()))(),
     });
     acceptances.complete(acceptanceId, { confirmationNumber: result.confirmationNumber });
@@ -223,42 +205,14 @@ const bookAcceptedQuote = async (
   const fullNights = await findFullNights(stayOf(quote));
   if (fullNights.length > 0) throw fullyBookedError(fullNights);
 
-  const card = await readGuaranteeCard(
-    context.cardProcessor,
-    request.cardSetupId,
-    context.acceptanceId,
-  );
-  const paymentIntentId = await holdRequestPrice(context.cardProcessor, {
-    paymentMethodId: card.paymentMethodId,
-    amount: quote.total,
-    acceptanceId: context.acceptanceId,
-  });
-  let requested: Awaited<ReturnType<typeof recordBooking>>;
-  try {
-    requested = await recordBooking(request, quote, context, {
-      owner,
-      termsVersionsUuid,
-      paymentMethodId: card.paymentMethodId,
-      paymentIntentId,
-    });
-  } catch (error: unknown) {
-    await releaseUnusedHold(context.cardProcessor, paymentIntentId);
-    throw error;
-  }
-
-  const charged =
-    requested.status === 'confirmed' &&
-    (await chargeConfirmedRequest(requested.bookingId, context.cardProcessor)) === 'charged';
+  const requested = await recordBooking(request, quote, context, { owner, termsVersionsUuid });
   const dropOffAt = newZealandWallClockToDate(quote.startDate, request.stay.dropOffTime);
   return {
     ...requested,
     payment: {
-      status: charged ? 'charged' : 'held',
+      status: 'pay_at_desk',
       amount: quote.total,
-      reviewBy: charged
-        ? null
-        : reviewDeadlineFor({ bookedAt: context.now, dropOffAt }).toISOString(),
-      testMode: context.cardProcessor.testMode,
+      reviewBy: reviewDeadlineFor({ bookedAt: context.now, dropOffAt }).toISOString(),
     },
   };
 };
@@ -266,9 +220,6 @@ const bookAcceptedQuote = async (
 interface BookingRecordInput {
   owner: ResolvedOwner;
   termsVersionsUuid: string;
-  paymentMethodId: string;
-  /** The hold placed for the full price just before recording. */
-  paymentIntentId: string;
 }
 
 /** Creates the account and pets if needed, then writes the request in one transaction. */
@@ -304,16 +255,7 @@ const recordBooking = async (
         // carries the time the request was sent.
         agreedAt: context.now,
       },
-      // The full price is already held; it is charged once every pet is decided.
-      payment: {
-        processor: context.cardProcessor.name,
-        processorPaymentMethodId: input.paymentMethodId,
-        amount: quote.total,
-        currency: CONCIERGE_CURRENCY,
-        status: 'authorized',
-        processorPaymentIntentId: input.paymentIntentId,
-      },
-      // 'confirmed' marks a booking recorded with a saved card; each pet carries its own review.
+      // No payment row: nothing is paid online. Each pet carries its own review.
       recording: { bookingStatus: 'confirmed', petReviewStatus: 'pending' },
       beforeWrite: async (client) => {
         const currentId = await currentAgreementTerms(request.agreement.termsVersionLabel, client);
@@ -344,11 +286,10 @@ const recordBooking = async (
       name: readError instanceof Error ? readError.name : 'unknown',
     });
   }
-  await planCareForConfirmedPets(bookingPetIds, decisions);
 
-  // The parent's receipt ("confirmed", or which stays a manager checks and why) and, only for
-  // those stays, the managers' notice. It logs its own failures, so the booking that was just
-  // saved is never lost to a notice.
+  // The parent's receipt (the request waits for our manager) and the managers' notice. Care tasks
+  // come when a manager approves. It logs its own failures, so the booking that was just saved
+  // is never lost to a notice.
   await notifyBookingPlaced(
     booking.bookingId,
     decisions.map((decision) => ({ name: decision.petName, reasons: decision.reasons })),

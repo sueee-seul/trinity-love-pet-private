@@ -171,3 +171,32 @@ export interface ChangeTimesResult {
   dropOffAt: string;
   pickUpAt: string;
 }
+
+// ----- Change requests while the pet is staying -------------------------------------------------
+//
+// Since 2026-10-14 each change above is a request: the POST saves it, our manager approves or
+// refuses it, and only then does the stay change. Mirrors Backend contracts/booking.change.contract.ts.
+
+export type StayChangeRequestStatus = 'pending' | 'approved' | 'refused' | 'cancelled';
+
+export type StayChangeRequestDetails =
+  | { kind: 'extend'; endDate: string }
+  | { kind: 'add_on'; serviceId: string; serviceName: string; date: string; quantity: number }
+  | { kind: 'times'; dropOffTime?: string; pickUpTime?: string }
+  | { kind: 'early_check_out' };
+
+export interface StayChangeRequest {
+  id: string;
+  bookingId: string;
+  /** The pet an add-on or a time is for; null for a change to the whole stay. */
+  bookingPetId: string | null;
+  details: StayChangeRequestDetails;
+  /** What it costs if approved, paid at the desk at check-out; null when it costs nothing. */
+  quotedAmount: number | null;
+  status: StayChangeRequestStatus;
+  refusalReason: string | null;
+  /** One English line, e.g. "extend Max's stay to 17 Oct 2026 ($55.00)". */
+  summary: string;
+  createdAt: string;
+  decidedAt: string | null;
+}

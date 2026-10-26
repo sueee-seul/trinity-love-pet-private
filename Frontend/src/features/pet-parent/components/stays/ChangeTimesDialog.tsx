@@ -1,9 +1,9 @@
 import { useState, type ReactElement } from 'react';
 import { Modal } from '../../../../shared/components/ui/Modal/Modal';
-import { changeStayTimes } from '../../api/stayChangesApi';
+import { requestTimes } from '../../api/stayChangesApi';
 import { usePortalCopy } from '../../i18n/portalLocale';
 import type { PetStay } from '../../types/stays';
-import type { ChangeTimesInput, ChangeTimesResult } from '../../types/stayChanges';
+import type { ChangeTimesInput, StayChangeRequest } from '../../types/stayChanges';
 import { IN_STAY_CHANGES_COPY } from './inStayChangesCopy';
 import { StayDialogActions } from './StayDialogActions';
 import { StayDialogFrame } from './StayDialogFrame';
@@ -19,14 +19,14 @@ import {
 interface ChangeTimesDialogProps {
   stay: PetStay;
   onClose: () => void;
-  onChanged: (result: ChangeTimesResult) => void;
+  onRequested: (request: StayChangeRequest) => void;
 }
 
 /** Moves the drop-off time (before the stay starts) or the pick-up time, on the booked days. */
 export function ChangeTimesDialog({
   stay,
   onClose,
-  onChanged,
+  onRequested,
 }: ChangeTimesDialogProps): ReactElement {
   const { times: copy, shared } = usePortalCopy(IN_STAY_CHANGES_COPY);
   // Once the pet is in, the drop-off has happened: only the pick-up time can still move.
@@ -51,7 +51,7 @@ export function ChangeTimesDialog({
     setSending(true);
     setProblem(null);
     try {
-      onChanged(await changeStayTimes(stay.bookingId, stay.bookingPetId, input));
+      onRequested(await requestTimes(stay.bookingId, stay.bookingPetId, input));
     } catch (error) {
       setProblem(problemMessage(error, copy.changeFailed));
     } finally {

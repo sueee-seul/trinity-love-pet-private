@@ -7,7 +7,6 @@ import {
   stayExtendedBody,
   timesChangedBody,
   backInReviewBody,
-  bookingConfirmedBody,
   cancelledByParentBody,
   formatStayDates,
   joinPetNames,
@@ -26,14 +25,9 @@ const MAX_STAY = {
 };
 
 const BELLA_ON_MEDICATION = { name: 'Bella', reasons: ['medication'] as const };
-const MAX_CONFIRMED = { name: 'Max', reasons: [] };
 
 const EVERY_BODY = [
-  bookingConfirmedBody(MAX_STAY, 'PB-ABC123'),
-  requestReceivedBody(MAX_STAY, 'PB-ABC123', [
-    MAX_CONFIRMED,
-    { ...BELLA_ON_MEDICATION, reasons: ['medication'] },
-  ]),
+  requestReceivedBody(MAX_STAY, 'PB-ABC123'),
   approvedBody(MAX_STAY),
   refusedBody(MAX_STAY, 'We are full that week.'),
   backInReviewBody(MAX_STAY),
@@ -71,42 +65,21 @@ describe('booking notice words', () => {
     expect(joinPetNames(['  '])).toBe('your pet');
   });
 
-  it('tells the parent a booking confirmed at checkout has its boarding pass', () => {
-    expect(bookingConfirmedBody({ ...MAX_STAY, petNames: ['Max', 'Bella'] }, 'PB-ABC123')).toBe(
-      'Your booking PB-ABC123 for Max and Bella, 12 to 15 Oct 2026, is confirmed. ' +
-        'Your boarding pass is in My stays.',
-    );
-  });
-
-  it('names who is confirmed and who a manager checks first, with the reason', () => {
-    const body = requestReceivedBody(MAX_STAY, 'PB-ABC123', [
-      MAX_CONFIRMED,
-      { name: 'Bella', reasons: ['medication'] },
-    ]);
+  it('tells the parent the request waits for our manager and nothing is paid online', () => {
+    const body = requestReceivedBody({ ...MAX_STAY, petNames: ['Max', 'Bella'] }, 'PB-ABC123');
 
     expect(body).toBe(
-      'We got your request PB-ABC123, 12 to 15 Oct 2026. Max is confirmed. ' +
-        'Our manager checks Bella (takes medication) before confirming. ' +
-        'We hold the full price on your card, and charge the confirmed pets once our manager has decided.',
+      'We got your request PB-ABC123 for Max and Bella, 12 to 15 Oct 2026. ' +
+        'Nothing is booked yet: our manager will check it and let you know here once it is approved or declined. ' +
+        'You pay at the desk on arrival, after a quick health check.',
     );
+    expect(body).not.toMatch(/is confirmed|card/i);
   });
 
-  it('never calls a stay confirmed when every pet waits for the manager', () => {
-    const body = requestReceivedBody(MAX_STAY, 'PB-ABC123', [
-      { name: 'Max', reasons: ['medication'] },
-    ]);
-
-    expect(body).toBe(
-      'We got your request PB-ABC123, 12 to 15 Oct 2026. ' +
-        'Our manager checks Max (takes medication) before confirming. ' +
-        'We hold the full price on your card, and charge the confirmed pets once our manager has decided.',
-    );
-    expect(body).not.toMatch(/Max is confirmed|booked/i);
-  });
-
-  it('tells the parent an approved stay has its boarding pass', () => {
+  it('tells the parent when to come, the desk health check and payment, and the boarding pass', () => {
     expect(approvedBody(MAX_STAY)).toBe(
-      "Max's stay, 12 to 15 Oct 2026, is confirmed. Your boarding pass is in My stays.",
+      "Max's stay, 12 to 15 Oct 2026, is approved. Please bring Max on Mon 12 Oct at 9:00 am. " +
+        'We do a quick health check at the desk, then you pay there. Your boarding pass is in My stays.',
     );
   });
 
@@ -127,15 +100,22 @@ describe('booking notice words', () => {
     const undated = { petNames: ['Max'], dropOffTime: null, pickUpTime: null };
 
     expect(approvedBody(undated)).toBe(
-      "Max's stay is confirmed. Your boarding pass is in My stays.",
+      "Max's stay is approved. We do a quick health check at the desk, then you pay there. " +
+        'Your boarding pass is in My stays.',
     );
     expect(refusedBody(undated, 'Full.')).toBe("We can't take Max. Reason: Full.");
   });
 
-  it('gives managers only the pets to check, why, the dates and the reference', () => {
+  it('gives managers every pet, what to look at, the dates and the reference', () => {
     expect(
-      managerRequestBody(MAX_STAY, 'PB-ABC123', [{ name: 'Bella', reasons: ['medication'] }]),
-    ).toBe('Please review Bella (takes medication), 12 to 15 Oct 2026. ' + 'Reference PB-ABC123.');
+      managerRequestBody(MAX_STAY, 'PB-ABC123', [
+        { name: 'Max', reasons: [] },
+        { name: 'Bella', reasons: ['medication'] },
+      ]),
+    ).toBe(
+      'Please review Max and Bella (takes medication), 12 to 15 Oct 2026. ' +
+        'Reference PB-ABC123.',
+    );
   });
 
   it('titles decisions with the same words as the stay pages', () => {
@@ -212,7 +192,7 @@ describe('the receipt after the parent cancels', () => {
 
   it('says nothing was charged when the cancellation was free', () => {
     expect(cancelledByParentBody(MAX_STAY, 'PB-ABC123', 0)).toBe(
-      "You cancelled Max's stay, 12 to 15 Oct 2026, reference PB-ABC123. Nothing was charged; anything held or paid goes back to your card.",
+      "You cancelled Max's stay, 12 to 15 Oct 2026, reference PB-ABC123. Nothing was charged.",
     );
   });
 });

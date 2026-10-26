@@ -35,7 +35,7 @@ export const addDays = (isoDate: string, days: number): string => {
 };
 
 /**
- * "Mon 12 Oct" / "10月12日周一", with the year added when it is not this year, so a date that
+ * "Mon 12 Oct" (or the Chinese month-day with the weekday), with the year added when it is not this year, so a date that
  * rolled into next year is never mistaken for this one. Read from the ISO date without shifting
  * it through a time zone.
  */
@@ -55,7 +55,7 @@ export const formatShortDate = (
   return locale === 'en' ? text.replace(',', '') : text;
 };
 
-/** "Mon 12 Oct and Tue 13 Oct" / "10月12日周一、10月13日周二". */
+/** "Mon 12 Oct and Tue 13 Oct", joined the Chinese way in Chinese. */
 export const formatDateList = (
   isoDates: string[],
   locale: ConciergeLocale,

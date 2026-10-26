@@ -21,7 +21,6 @@ import {
   catalogue,
   checkoutResponse,
   combos,
-  fakeCardSetup,
   oneDog,
   openFilledDetails,
   roomierCombo,
@@ -39,7 +38,6 @@ vi.mock('../api/conciergeApi', () => ({
     chat: vi.fn(),
     priceSelection: vi.fn(),
     acceptQuote: vi.fn(),
-    cardSetup: vi.fn(),
     checkout: vi.fn(),
     status: vi.fn(),
     rates: vi.fn(),
@@ -87,8 +85,6 @@ describe('ConciergePage', () => {
     vi.mocked(conciergeApi.checkout).mockReset();
     vi.mocked(conciergeApi.status).mockResolvedValue(statusResponse());
     vi.mocked(conciergeApi.myPets).mockResolvedValue([]);
-    vi.mocked(conciergeApi.cardSetup).mockReset();
-    vi.mocked(conciergeApi.cardSetup).mockResolvedValue(fakeCardSetup());
     vi.mocked(authApi.checkEmail).mockReset();
     vi.mocked(authApi.loginWithPassword).mockReset();
     vi.mocked(conciergeApi.rates).mockResolvedValue({
@@ -299,8 +295,10 @@ describe('ConciergePage', () => {
     const panel = screen.getByRole('dialog', { name: 'Your stay' });
     expect(within(panel).getAllByText('$267.00').length).toBeGreaterThan(0);
     expect(within(panel).getAllByText(/includes GST of \$34\.83/).length).toBeGreaterThan(0);
-    expect(within(panel).getByText('You are only charged for confirmed stays')).toBeInTheDocument();
-    expect(within(panel).getByText('Confirmed at once when there is room')).toBeInTheDocument();
+    expect(
+      within(panel).getByText('Nothing is paid online: you pay at the desk on arrival'),
+    ).toBeInTheDocument();
+    expect(within(panel).getByText('Our manager approves each request')).toBeInTheDocument();
   });
 
   it('names the full nights instead of offering options that cannot be booked', () => {
@@ -337,15 +335,13 @@ describe('ConciergePage', () => {
     expect(useConciergeStore.getState().stayPanelOpen).toBe(false);
   });
 
-  it('offers the team instead of a dead end when no card can be saved', async () => {
+  it('offers the team instead of a dead end when online booking is off', async () => {
     const user = userEvent.setup();
-    vi.mocked(conciergeApi.status).mockResolvedValue(
-      statusResponse({ cardPayments: { processor: null, testMode: false } }),
-    );
+    vi.mocked(conciergeApi.status).mockResolvedValue(statusResponse({ capacityConfigured: false }));
     withStay();
     renderPage();
 
-    expect(await screen.findByText(/Card payments aren’t set up yet/)).toBeInTheDocument();
+    expect(await screen.findByText(/online booking is paused right now/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /^Your stay/ }));
     await user.click(screen.getByRole('button', { name: 'Send this plan to our team' }));
 
@@ -359,7 +355,7 @@ describe('ConciergePage', () => {
     expect(conciergeApi.acceptQuote).not.toHaveBeenCalled();
   });
 
-  it('asks the parent for the pet’s name, the terms and the card agreement, points to each problem, and sends the request with the saved card', async () => {
+  it('asks the parent for the pet’s name and the terms, points to each problem, and sends the request with nothing paid online', async () => {
     const user = userEvent.setup();
     vi.mocked(conciergeApi.checkout).mockResolvedValue(checkoutResponse());
     signInParent();
@@ -373,9 +369,11 @@ describe('ConciergePage', () => {
     useConciergeStore.getState().goTo('details');
     renderPage();
 
-    // The development fake stands in for the card form, so there is no card number to type.
+    // No card is asked for: the parent pays at the desk.
     expect(
-      await screen.findByText('Test mode: no card is needed and nothing is charged.'),
+      await screen.findByText(
+        'Nothing is paid online. Our manager approves or declines your request, and you pay at the desk on arrival, after a quick health check.',
+      ),
     ).toBeInTheDocument();
     // A signed-in parent's contact details come from the account, so none are asked for.
     expect(screen.queryByLabelText('First name')).not.toBeInTheDocument();
@@ -389,19 +387,7 @@ describe('ConciergePage', () => {
     await user.type(screen.getByLabelText('Name'), 'Biscuit');
     await chooseTime(user, screen.getByRole('combobox', { name: 'Check-in time' }), '10:30');
     await chooseTime(user, screen.getByRole('combobox', { name: 'Check-out time' }), '16:00');
-    // The full price is held when the request is sent, and charged once the stay is confirmed.
-    expect(
-      screen.getByText(
-        'When you send this request we hold $267.00 on your card. You are only charged once your stays are confirmed: straight away when every pet is confirmed, or once our manager has decided, within 24 hours. A pet we can’t take, or don’t decide on in time, is not charged. If the card is declined, nothing is booked.',
-      ),
-    ).toBeInTheDocument();
-    // The hold is explained once, in the card section's lead, not again in the rules list.
-    expect(screen.getAllByText(/we hold \$267\.00 on your card/)).toHaveLength(1);
-    expect(
-      screen.getByText(
-        'Cancel less than 72 hours before check-in, or don’t come on check-in day: 50% of each confirmed pet’s stay.',
-      ),
-    ).toBeInTheDocument();
+    expect(screen.queryByText(/on your card/)).not.toBeInTheDocument();
     await user.click(
       screen.getByRole('checkbox', {
         name: /emergency vet treatment for my pet/,
@@ -419,7 +405,7 @@ describe('ConciergePage', () => {
     expect(request?.agreement).toMatchObject({ termsAccepted: true });
     expect(request?.stay).toEqual({ dropOffTime: '10:30', pickUpTime: '16:00' });
     expect(request?.pets).toEqual([{ newPet: { name: 'Biscuit' } }]);
-    expect(request?.cardSetupId).toBe('fake_seti_acceptance-1');
+    expect(request).not.toHaveProperty('cardSetupId');
     const receipt = await screen.findByRole('region', { name: 'Request receipt' });
     expect(within(receipt).getByText('PB-AAAAAA')).toBeInTheDocument();
     expect(within(receipt).getByText('Waiting for review')).toBeInTheDocument();
@@ -427,9 +413,10 @@ describe('ConciergePage', () => {
     expect(within(receipt).getByText('4:00 pm')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Boarding pass' })).not.toBeInTheDocument();
     expect(
-      screen.getByText(/^We’ve held \$230\.00 on your card\. Our manager decides by Wed 2 Dec /),
+      screen.getByText(
+        /^Please wait a moment: our manager will approve or decline your request by Wed 2 Dec .*Nothing has been paid\. If it is approved, you pay \$230\.00 at the desk on arrival/,
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByText('This was a test: no real money moved.')).toBeInTheDocument();
     expect(screen.getByText(/latest status is always in My stays/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Do it now: Vaccination proof' })).toHaveAttribute(
       'href',
@@ -459,7 +446,7 @@ describe('ConciergePage', () => {
     openFilledDetails();
     renderPage();
 
-    await screen.findByText('Test mode: no card is needed and nothing is charged.');
+    await screen.findByRole('button', { name: 'Send booking request' });
     await act(async () => {
       await user.click(screen.getByRole('button', { name: 'Send booking request' }));
     });
@@ -496,20 +483,8 @@ describe('ConciergePage', () => {
     expect(await screen.findByRole('heading', { name: 'A few details' })).toBeInTheDocument();
     expect(useConciergeStore.getState().step).toBe('details');
     expect(screen.queryByRole('heading', { name: 'Sign in to continue' })).not.toBeInTheDocument();
-    // The card waits for the email its account is made with.
-    expect(
-      screen.getByText('Enter your email above, then add your card here.'),
-    ).toBeInTheDocument();
-    expect(conciergeApi.cardSetup).not.toHaveBeenCalled();
-
     await user.type(screen.getByLabelText('Email'), 'new.guest@example.test');
     await user.type(screen.getByLabelText('Choose a password'), 'Sunny-days-42');
-    expect(
-      await screen.findByText('Test mode: no card is needed and nothing is charged.'),
-    ).toBeInTheDocument();
-    expect(conciergeApi.cardSetup).toHaveBeenCalledWith(
-      expect.objectContaining({ guestEmail: 'new.guest@example.test' }),
-    );
     await user.type(screen.getByLabelText('First name'), 'Nina');
     await user.type(screen.getByLabelText('Last name'), 'Park');
     await user.type(screen.getByLabelText('Your mobile'), '021 555 0142');
@@ -533,7 +508,7 @@ describe('ConciergePage', () => {
 
   it('sends a guest whose email already has an account to sign in, keeping what they typed', async () => {
     const user = userEvent.setup();
-    vi.mocked(conciergeApi.cardSetup).mockRejectedValueOnce(
+    vi.mocked(conciergeApi.checkout).mockRejectedValueOnce(
       new ApiError('This email already has a Wagstay account.', 409, {
         error: { code: 'CONCIERGE_ACCOUNT_EXISTS', message: 'exists' },
       }),
@@ -546,15 +521,31 @@ describe('ConciergePage', () => {
       accepted: acceptedFor(roomierCombo.quote),
       agreedQuote: roomierCombo.quote,
     });
+    const store = useConciergeStore.getState();
+    store.initDetailsDraft();
+    store.updateDetailsDraft((draft) => ({
+      ...draft,
+      contact: {
+        ...draft.contact,
+        email: 'ava@example.test',
+        password: 'Sunny-days-42',
+        firstName: 'Ava',
+        lastName: 'Mitchell',
+        phone: '021 555 0199',
+      },
+      pets: draft.pets.map((pet) => ({ ...pet, name: 'Biscuit' })),
+      dropOffTime: '10:00',
+      pickUpTime: '16:00',
+      termsAccepted: true,
+      vetConsent: true,
+    }));
     renderPage();
 
-    await user.type(await screen.findByLabelText('Email'), 'ava@example.test');
-    await user.tab();
+    await act(async () => {
+      await user.click(await screen.findByRole('button', { name: 'Send booking request' }));
+    });
 
-    // The card is set up after a short pause in typing, which a loaded test run can stretch.
-    expect(
-      await screen.findByText(/already has an account/i, undefined, { timeout: 5000 }),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/already has an account/i)).toBeInTheDocument();
     expect(screen.getByLabelText('Email')).toHaveValue('ava@example.test');
     expect(screen.getAllByRole('button', { name: 'Sign in' }).length).toBeGreaterThan(0);
   });

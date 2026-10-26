@@ -3,6 +3,7 @@ import type {
   CheckInOutcome,
   FinishCheckInResponse,
   ManagerBookingRecord,
+  ManagerStayChangeRequest,
   StaffReschedule,
   StaffRescheduleResponse,
 } from '../types/booking';
@@ -129,5 +130,35 @@ export const cancelWithoutFeeOnServer = async (
     `/by-booking/${bookingId}/cancel`,
     { method: 'POST', body: { reason } },
     'Could not cancel this booking',
+  );
+};
+
+// ----- Change requests for stays under way ------------------------------------------------------
+
+export const fetchStayChangeRequests = async (): Promise<ManagerStayChangeRequest[]> => {
+  const response = await send(
+    '/change-requests',
+    { method: 'GET' },
+    'Unable to load change requests',
+  );
+  const payload: unknown = await response.json();
+  if (!Array.isArray(payload)) throw new Error('Invalid change requests response');
+  return payload as ManagerStayChangeRequest[];
+};
+
+/** Makes the change; the server says why when it can no longer be made. */
+export const approveStayChangeRequest = async (requestId: string): Promise<void> => {
+  await send(
+    `/change-requests/${encodeURIComponent(requestId)}/approve`,
+    { method: 'PATCH' },
+    'Could not approve this request',
+  );
+};
+
+export const refuseStayChangeRequest = async (requestId: string, reason: string): Promise<void> => {
+  await send(
+    `/change-requests/${encodeURIComponent(requestId)}/refuse`,
+    { method: 'PATCH', body: { reason } },
+    'Could not refuse this request',
   );
 };

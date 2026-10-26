@@ -39,6 +39,13 @@ describe('when a guest can change a stay online', () => {
     expect(canMoveOnline(paid, BEFORE_DROP_OFF)).toBe(true);
   });
 
+  it('offers both for a request made without a card: nothing is paid online', () => {
+    const request = bookedStay({ card: null });
+
+    expect(canCancelOnline(request, BEFORE_DROP_OFF)).toBe(true);
+    expect(canMoveOnline(request, BEFORE_DROP_OFF)).toBe(true);
+  });
+
   it('lets a request still waiting for review be withdrawn', () => {
     const request = bookedStay({ status: 'waiting_for_review', reviewStatus: 'pending' });
 
@@ -49,7 +56,6 @@ describe('when a guest can change a stay online', () => {
     ['after drop-off', bookedStay(), AFTER_DROP_OFF],
     ['once cancelled', bookedStay({ status: 'cancelled' }), BEFORE_DROP_OFF],
     ['once refused', bookedStay({ status: 'refused' }), BEFORE_DROP_OFF],
-    ['without a saved card', bookedStay({ card: null }), BEFORE_DROP_OFF],
     [
       'once settled',
       bookedStay({

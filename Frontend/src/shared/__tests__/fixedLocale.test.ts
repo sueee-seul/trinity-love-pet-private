@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * Dates and numbers must be formatted in a fixed language. With no locale, or with [] or
- * undefined, the browser's own language wins, so a Chinese browser showed "9月28日" on English
+ * undefined, the browser's own language wins, so a Chinese browser showed a Chinese "28 Sep" on English
  * pages.
  */
 const SRC = fileURLToPath(new URL('../../', import.meta.url));

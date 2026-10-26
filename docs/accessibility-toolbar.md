@@ -30,7 +30,7 @@ and on mobile the launcher is raised to clear the 48px tab bar.
 The English and Chinese switch used to sit in four headers (landing, booking, pet parent portal,
 sign-in card). It now has one home, this bar, so a visitor finds it in the same place on every page
 and the headers keep their room for the page's own actions. The button shows the other language in
-that language ("中文" on the English site, "English" on the Chinese site), so a visitor who cannot
+that language (the Chinese word for Chinese on the English site, "English" on the Chinese site), so a visitor who cannot
 read the current language still recognises it. The choice is the same site setting as before: it
 is remembered, `?lang=` still works, and staff pages stay English.
 

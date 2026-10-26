@@ -36,15 +36,15 @@ const ADD_ON_WORDS: readonly [AddOnWord, RegExp][] = [
   ['training', /\btraining(?: session)?\b|训练/i],
 ];
 
-/** "Cancel the booking", "取消这次预订": the whole stay, before it starts. */
+/** "Cancel the booking" (or the Chinese for it): the whole stay, before it starts. */
 const CANCEL =
   /\bcancel\b.{0,30}\b(?:stay|booking|reservation|request|trip)\b|\bwithdraw\b.{0,20}\b(?:request|booking)\b|取消.{0,6}(?:预订|预约|住宿|订单|寄养|申请)|不住了/i;
 
-/** "Move the booking to 20 to 23 October", "改期到10月20日": new dates for a stay not started. */
+/** "Move the booking to 20 to 23 October" (or in Chinese): new dates for a stay not started. */
 const MOVE_DATES =
   /\b(?:change|move|reschedule|shift|push (?:back|out)|bring forward)\b.{0,30}\b(?:dates?|booking|stay|reservation)\b|\bdifferent dates\b|改(?:一下)?日期|改期|换(?:个)?日期|日期改|推迟到|延后到/i;
 
-/** "Check out at 3pm instead", "离店时间改到下午三点": a change to the check-out itself. */
+/** "Check out at 3pm instead" (or in Chinese): a change to the check-out itself. */
 const PICK_UP =
   /\bpick(?:ing)?[- ]?(?:\w+ )?up\b|\bcheck(?:ing)?[- ]?out\b|\bcollect(?:ing)?\b|离店|来接|去接|接回|接走|接(?:他|她|它|它们)|接宠|取回|领回|接的时间|几点接/i;
 const CHANGE_WORD =
@@ -77,7 +77,7 @@ const toNumber = (word: string): number | null => {
   return NUMBER_WORDS[lower] ?? null;
 };
 
-/** "two more nights", "another night", "多住两晚", "延长3天". */
+/** "two more nights", "another night", and the Chinese "stay two more nights", "extend 3 days". */
 export const parseNights = (text: string): number | null => {
   const english =
     /\b(\d+|a|an|one|two|three|four|five|six|seven|another)\s+(?:more\s+|extra\s+)?nights?\b/i.exec(
@@ -157,7 +157,7 @@ const upcoming = (today: string, month: number, day: number): string | null => {
 
 /**
  * The date a message names, as a New Zealand calendar date: today, tomorrow, a weekday, "16 Oct",
- * "October 16", "16/10" (day first, as written in New Zealand), "10月16日" or an ISO date.
+ * "October 16", "16/10" (day first, as written in New Zealand), a Chinese month-day or an ISO date.
  */
 export const parseDate = (text: string, today: string): string | null => {
   const lower = text.toLowerCase();
@@ -212,7 +212,7 @@ const CHINESE_HOURS: Record<string, number> = {
 const clockOf = (hour: number, minute: number): string | null =>
   hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 ? `${pad(hour)}:${pad(minute)}` : null;
 
-/** The time a message names: "3pm", "3:30 pm", "15:00", "noon", "下午3点", "三点半". */
+/** The time a message names: "3pm", "3:30 pm", "15:00", "noon", and Chinese times such as "3 pm" or "half past three". */
 export const parseTime = (text: string): string | null => {
   const lower = text.toLowerCase();
   if (/\bnoon\b|\bmidday\b|中午12点|中午十二点/.test(lower)) return '12:00';
@@ -230,7 +230,8 @@ export const parseTime = (text: string): string | null => {
     );
   if (chinese) {
     const [, part, hourWord = '', half, minutes] = chinese;
-    // "快一点" or "早一点接" means "a little", not one o'clock.
+    // In Chinese, "a bit quicker" or "pick up a bit earlier" uses the word for "one" to mean "a
+    // little", not one o'clock.
     if (!part && hourWord === '一') return null;
     let hour = /^\d+$/.test(hourWord) ? Number(hourWord) : (CHINESE_HOURS[hourWord] ?? -1);
     if ((part === '下午' || part === '傍晚' || part === '晚上') && hour < 12) hour += 12;
@@ -249,7 +250,7 @@ const addOnIn = (text: string): AddOnWord | null =>
  */
 /**
  * The dates a message names in order, as a range: "20 to 23 October", "20/10 - 23/10",
- * "10月20日到10月23日". A month written once ("20 to 23 October") carries to the first date.
+ * a Chinese "20 October to 23 October". A month written once ("20 to 23 October") carries to the first date.
  */
 export const parseDateRange = (text: string, today: string): [string | null, string | null] => {
   const parts = text.split(/\s+(?:to|until|till|through|and)\s+|\s*[-–—]\s*(?=\d)|到|至/i);
@@ -308,8 +309,8 @@ const CONFIRM =
 const DECLINE =
   /^\s*(?:(?:no|nope|nah|cancel|don'?t|do not|stop|never ?mind|not now|leave it)\b|不用|不要|取消|算了|先不|暂时不|不了|不)/i;
 
-/** A plain yes to the change just quoted ("yes", "confirm", "好的", "确认"). */
+/** A plain yes to the change just quoted ("yes", "confirm", or the Chinese "OK" and "confirm"). */
 export const isConfirmation = (text: string): boolean => CONFIRM.test(text.trim());
 
-/** A plain no ("no", "cancel", "不用了", "取消"). */
+/** A plain no ("no", "cancel", or the Chinese "no need" and "cancel"). */
 export const isDecline = (text: string): boolean => DECLINE.test(text.trim());

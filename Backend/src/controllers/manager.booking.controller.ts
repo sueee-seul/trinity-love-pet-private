@@ -1,6 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { staffRescheduleSchema } from '../contracts/booking.change.contract.js';
+import {
+  refuseStayChangeSchema,
+  staffRescheduleSchema,
+  stayChangeListQuerySchema,
+} from '../contracts/booking.change.contract.js';
 import {
   exceptionCancelSchema,
   recordArrivalSchema,
@@ -9,6 +13,7 @@ import {
 import { AppError } from '../common/middlewares/error.middleware.js';
 import * as bookingCheckIn from '../services/booking.check-in.js';
 import * as managerBookingService from '../services/manager.booking.js';
+import * as stayChangeRequests from '../services/stay-change-requests.js';
 
 export const getAllBookings = async (
   _req: Request,
@@ -148,6 +153,53 @@ export const cancelWithoutFee = async (
     const bookingId = z.string().uuid().parse(req.params.bookingId);
     const { reason } = exceptionCancelSchema.parse(req.body);
     await bookingCheckIn.cancelWithoutFee(bookingId, reason);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ----- Change requests for stays under way (stay-change-requests.ts) ----------------------------
+
+export const getStayChangeRequests = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { status } = stayChangeListQuerySchema.parse(req.query);
+    res
+      .status(200)
+      .json(await stayChangeRequests.listStayChangeRequestsForManagers(status === 'pending'));
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** 204: the change is made; the lists are read again to see it. */
+export const approveStayChangeRequest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const requestId = z.string().uuid().parse(req.params.requestId);
+    await stayChangeRequests.approveStayChangeRequest(requestId, deciderId(req));
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refuseStayChangeRequest = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const requestId = z.string().uuid().parse(req.params.requestId);
+    const { reason } = refuseStayChangeSchema.parse(req.body);
+    await stayChangeRequests.refuseStayChangeRequest(requestId, deciderId(req), reason);
     res.status(204).send();
   } catch (error) {
     next(error);

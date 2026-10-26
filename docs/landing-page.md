@@ -32,7 +32,7 @@ there too (`ConciergeHeader.tsx`).
 ## Sections, in order
 
 1. **Header**: the Wagstay paw and wordmark, the anchor links (Prices, How it works, Care
-   updates, FAQ) as navigation pills, 中文/English, Sign in or My pet centre, and "Plan a stay".
+   updates, FAQ) as navigation pills, Chinese/English, Sign in or My pet centre, and "Plan a stay".
    It is in the hero colour. From 1024px it stays at the top, and the section being read shows as
    the solid pill: `useActiveSection` watches the four sections with an IntersectionObserver and
    the link gets `aria-current="true"`. `scroll-padding-top` keeps anchor jumps and keyboard
@@ -69,7 +69,7 @@ opening hours, webcams, cancellation terms or vet claims. Add one only when the 
 | Up to 4 pets, up to 60 nights                        | `CONCIERGE_MAX_PETS` and `MAX_ONLINE_NIGHTS`, which mirror the Backend limits; the page reads the constants, so the numbers cannot drift |
 | The assistant is an AI and says so                   | Its greeting and label (`chat.greeting`, `aiBadge`), quoted from the concierge copy                                                      |
 | Talk to a person                                     | `HandoffPanel`, the same hand-off `/book` opens; it shows only a real configured email or phone from `GET /api/concierge/status`         |
-| Works in English and 中文                            | The shared locale in the concierge store                                                                                                 |
+| Works in English and Chinese                            | The shared locale in the concierge store                                                                                                 |
 | Reading help at the bottom left                      | The accessibility launcher (`shared/accessibility`)                                                                                      |
 
 The three photos in `features/landing/assets/` are decorative pictures of pets. Their alt text
@@ -83,7 +83,7 @@ The price card then says "See your price in the booking assistant." and keeps it
 
 English is the default, even when the browser prefers Chinese. The page uses the concierge store's
 locale (`useConciergeLocale`), so it follows `?lang=zh` or `?lang=en` in the link, then the saved
-choice under `trinity-concierge-locale`. The 中文/English button saves the choice, so `/book` opens
+choice under `trinity-concierge-locale`. The Chinese/English button saves the choice, so `/book` opens
 in the same language. While the page is shown it sets the tab title, and it restores it when the
 visitor leaves (`useDocumentTitle`). `<html lang>` (`en-NZ` or `zh-Hans`) is set for the whole app by
 `SiteLanguageProvider`, described in `docs/accessibility-toolbar.md`.
@@ -102,8 +102,8 @@ The looks are in three groups, each with a heading: romantic, luxury, then minim
 the same wherever it is chosen. A romantic or luxury card shows that theme's own picture from
 `THEME_PAGE_IMAGES`. A
 minimal card has no picture: it shows the theme's page colour with "Aa" in its accent. Strawberry
-Cream, the customer default, carries a "Default" tag (默认 in Chinese). Slate and Moonlight
-Sleepover carry a "Night mode" tag (夜间模式) and come last in their groups.
+Cream, the customer default, carries a "Default" tag (also in Chinese). Slate and Moonlight
+Sleepover carry a "Night mode" tag and come last in their groups.
 
 Showing the pictures is a trade-off with `docs/brand-themes.md`, where a visitor normally downloads
 only their own theme's picture: this section downloads all six (about 120KB to 460KB each). They
@@ -137,7 +137,7 @@ The page carries the marker classes the themes decorate (see "Decorations" in
 - `<main>` wears `theme-pattern`, the page ground a theme may pattern.
 - `ThemeDivider` sits before Prices, How booking works, Dogs and cats, the assistant and the FAQ.
   Only some themes draw it.
-- The hero title wraps `hero.titleAccent` ("happy", "开心") in `theme-accent-word`, and the hero
+- The hero title wraps `hero.titleAccent` ("happy", and its Chinese) in `theme-accent-word`, and the hero
   holds `ThemeHeroOrnament`.
 - The package tiers are `theme-key-card theme-package-card`, and Signature adds
   `theme-feature-card` and `ThemeSignatureBadge`. The assistant card is a key card too.

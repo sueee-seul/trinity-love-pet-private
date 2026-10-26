@@ -19,8 +19,6 @@ import { createEmptyNeeds } from '../services/concierge/concierge.needs.js';
 import { resetConciergeVerificationStore } from '../services/concierge/concierge.identity.js';
 import * as conciergeRepository from '../repositories/concierge.repository.js';
 import type * as bookingCapacity from '../services/booking.capacity.js';
-import { setCardProcessorForTests } from '../services/payments/card-processor.factory.js';
-import { FakeCardProcessor } from '../services/payments/fake-card-processor.js';
 import {
   signQuote,
   signVerifiedEmail,
@@ -85,7 +83,6 @@ beforeEach(() => {
 
 afterEach(() => {
   process.env = { ...savedEnvironment };
-  setCardProcessorForTests(undefined);
   vi.clearAllMocks();
 });
 
@@ -243,13 +240,9 @@ describe('concierge agree and checkout routes', () => {
     currency: 'NZD',
   };
 
-  const checkoutBody = async (
-    acceptedQuoteToken: string,
-    cardSetupId = 'fake_seti_not-used',
-  ): Promise<Record<string, unknown>> => ({
+  const checkoutBody = async (acceptedQuoteToken: string): Promise<Record<string, unknown>> => ({
     acceptedQuoteToken,
     verificationToken: await signVerifiedEmail('new.owner@example.test'),
-    cardSetupId,
     contact: {
       firstName: 'Ava',
       lastName: 'Mitchell',
@@ -294,52 +287,15 @@ describe('concierge agree and checkout routes', () => {
       petIds: ['00000000-0000-4000-8000-000000000401'],
     });
     vi.mocked(authRepository.findUserByEmail).mockResolvedValue(null);
-    setCardProcessorForTests(new FakeCardProcessor());
   });
 
-  const saveCard = async (
-    acceptedQuoteToken: string,
-    verificationToken?: string,
-  ): Promise<request.Response> =>
-    request(app)
+  it('has no card endpoint: nothing is paid online', async () => {
+    const response = await request(app)
       .post('/api/concierge/card-setup')
       .set('Origin', ORIGIN)
-      .send({ acceptedQuoteToken, ...(verificationToken ? { verificationToken } : {}) });
+      .send({ acceptedQuoteToken: await agree() });
 
-  it('saves a card for an agreed quote, and says when it is only a test', async () => {
-    const acceptedQuoteToken = await agree();
-
-    const response = await saveCard(
-      acceptedQuoteToken,
-      await signVerifiedEmail('new.owner@example.test'),
-    );
-
-    expect(response.status).toBe(201);
-    expect(response.body).toMatchObject({
-      processor: 'fake',
-      publishableKey: null,
-      testMode: true,
-    });
-    expect(response.body.setupId).toMatch(/^fake_seti_/);
-  });
-
-  it('asks a guest to verify their email before saving a card', async () => {
-    const response = await saveCard(await agree());
-
-    expect(response.status).toBe(401);
-    expect(response.body.error.code).toBe('CONCIERGE_EMAIL_UNVERIFIED');
-  });
-
-  it('says so when card payments are not set up', async () => {
-    setCardProcessorForTests(null);
-
-    const response = await saveCard(
-      await agree(),
-      await signVerifiedEmail('new.owner@example.test'),
-    );
-
-    expect(response.status).toBe(503);
-    expect(response.body.error.code).toBe('CONCIERGE_PAYMENTS_NOT_CONFIGURED');
+    expect(response.status).toBe(404);
   });
 
   it('rejects a quote token that was not signed by this server', async () => {
@@ -353,12 +309,7 @@ describe('concierge agree and checkout routes', () => {
   });
 
   it('records a request for an agreed quote, signs the new owner in, and refuses a second submission', async () => {
-    const acceptedQuoteToken = await agree();
-    const card = await saveCard(
-      acceptedQuoteToken,
-      await signVerifiedEmail('new.owner@example.test'),
-    );
-    const body = await checkoutBody(acceptedQuoteToken, card.body.setupId as string);
+    const body = await checkoutBody(await agree());
 
     const first = await request(app)
       .post('/api/concierge/checkout')
@@ -371,11 +322,13 @@ describe('concierge agree and checkout routes', () => {
 
     expect(first.status).toBe(201);
     expect(first.body).toMatchObject({
-      status: 'confirmed',
+      status: 'awaiting_manager_approval',
       total: 204,
       accountCreated: true,
-      payment: { testMode: true },
+      payment: { status: 'pay_at_desk', amount: 204 },
     });
+    // No payment row: nothing is paid online.
+    expect(vi.mocked(bookingRepository.createBooking).mock.calls[0]?.[0].payment).toBeUndefined();
     expect(String(first.headers['set-cookie'])).toContain(`${AUTH_COOKIE_NAME}=`);
     expect(second.status).toBe(409);
     expect(second.body.error.code).toBe('CONCIERGE_ALREADY_SUBMITTED');

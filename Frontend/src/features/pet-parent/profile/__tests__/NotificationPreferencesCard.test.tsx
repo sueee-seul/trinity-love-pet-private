@@ -115,7 +115,7 @@ describe('NotificationPreferencesCard', () => {
     expect(screen.getByRole('combobox', { name: '从' })).toHaveValue('21');
     expect(screen.getByRole('checkbox', { name: '动态同时发到邮箱' })).toBeInTheDocument();
     expect(screen.getByText('这段时间只发送安全相关的通知。')).toBeInTheDocument();
-    // Both languages are named in Chinese: 英文 and 中文.
+    // Both languages are named in Chinese: "English" and "Chinese".
     expect(screen.getByRole('radio', { name: '中文' })).toBeChecked();
     expect(screen.getByRole('radio', { name: '英文' })).not.toBeChecked();
     expect(englishWordsIn(document.body, [])).toEqual([]);

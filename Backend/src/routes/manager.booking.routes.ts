@@ -8,6 +8,9 @@ import {
   finishCheckIn,
   cancelWithoutFee,
   rescheduleWithoutCharge,
+  getStayChangeRequests,
+  approveStayChangeRequest,
+  refuseStayChangeRequest,
 } from '../controllers/manager.booking.controller.js';
 import { requireEmployee, requireManager } from '../common/middlewares/auth.middleware.js';
 
@@ -18,6 +21,10 @@ const router = Router();
 // with a manager: approving or refusing a stay, turning a pet away at the desk (checked in the
 // controller), and cancelling or moving a stay without a fee.
 router.get('/', requireEmployee, getAllBookings);
+// A parent's request to change a stay under way: every employee sees them, a manager decides.
+router.get('/change-requests', requireEmployee, getStayChangeRequests);
+router.patch('/change-requests/:requestId/approve', requireManager, approveStayChangeRequest);
+router.patch('/change-requests/:requestId/refuse', requireManager, refuseStayChangeRequest);
 // Per pet (:id is a booking_pets id).
 router.patch('/:id/approve', requireManager, approveBooking);
 router.patch('/:id/refuse', requireManager, refuseBooking);

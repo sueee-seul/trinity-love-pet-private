@@ -1,11 +1,11 @@
 import type { PortalCopy } from '../../i18n/portalLocale';
 
 /**
- * What the in-stay dialogs (extend, add-on, change times), the links that open them and the notice
- * after each tell a parent. Every button is named by its result, and the line next to a price says
- * how it is paid: on the saved card now, or, on a booking without a saved card, added to the bill
- * and paid at the desk at check-out. The Chinese says exactly what the English says. Money, dates
- * and times arrive already formatted; pet and service names come from the server.
+ * What the in-stay dialogs (extend, add-on, change times), the links that open them, the notice
+ * after each and the list of change requests tell a parent. Since 2026-10-14 each change is a
+ * request our manager approves or refuses; nothing is paid online, and an approved amount is added
+ * to the bill paid at the desk at check-out. The Chinese says exactly what the English says. Money,
+ * dates and times arrive already formatted; pet and service names come from the server.
  */
 export interface InStayChangesCopy {
   links: {
@@ -70,11 +70,22 @@ export interface InStayChangesCopy {
     confirm: string;
   };
   notice: {
-    extended: (newDay: string, amount: string) => string;
-    extendedToBill: (newDay: string, amount: string) => string;
-    addOnBooked: (quantity: number, serviceName: string, day: string, amount: string) => string;
-    addOnToBill: (quantity: number, serviceName: string, day: string, amount: string) => string;
-    timesChanged: (checkIn: string, checkOut: string) => string;
+    /** After a request is sent: nothing changes until our manager approves it. */
+    requested: string;
+  };
+  /** The parent's change requests and their answers, on My stays. */
+  requests: {
+    title: string;
+    status: Record<'pending' | 'approved' | 'refused' | 'cancelled', string>;
+    /** What was asked, in this language; money is already formatted. */
+    extend: (day: string, amount: string | null) => string;
+    addOn: (quantity: number, serviceName: string, day: string, amount: string | null) => string;
+    times: (checkIn: string | null, checkOut: string | null) => string;
+    earlyCheckOut: string;
+    reason: (reason: string) => string;
+    sentOn: (day: string) => string;
+    withdraw: string;
+    withdrawFailed: string;
   };
 }
 
@@ -100,7 +111,8 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
       amountChanged:
         'The amount changed while this was open, so nothing was charged. Here is the amount now; please check it and confirm again.',
       chargedNow: 'This is charged to your saved card now.',
-      addedToBill: 'This will be added to your bill. You pay it at the desk when you check out.',
+      addedToBill:
+        'This is a request for our manager. If approved, it is added to your bill, paid at the desk when you check out.',
     },
     extend: {
       title: 'Extend the stay',
@@ -110,12 +122,12 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
       longest: (days) => `You can add up to ${days} days.`,
       check: 'Check the price',
       checkFailed: "We couldn't check that date. Please try again.",
-      extendFailed: 'Your stay was not extended. Please try again.',
+      extendFailed: 'Your request was not sent. Please try again.',
       summary: (newDay, nights, amount) =>
         `Check-out moves to ${newDay}, ${nights} more. The added nights cost ${amount}.`,
       petLine: (petName, nights, rate, amount) => `${petName}: ${nights} at ${rate} = ${amount}`,
-      confirm: (amount) => `Extend and pay ${amount}`,
-      confirmToBill: (amount) => `Extend and add ${amount} to my bill`,
+      confirm: (amount) => `Send request (${amount})`,
+      confirmToBill: (amount) => `Send request (${amount})`,
     },
     addOn: {
       title: 'Add a walk or playtime',
@@ -123,7 +135,7 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
         `Add a service for ${petName} on a day of the stay. Our team adds it to their care plan.`,
       loading: 'Loading what we offer…',
       loadFailed: "We couldn't load the services. Please try again.",
-      addFailed: 'Nothing was added. Please try again.',
+      addFailed: 'Your request was not sent. Please try again.',
       noOffers: 'There is nothing to add for this stay.',
       offer: 'Service',
       day: 'Day',
@@ -133,7 +145,7 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
         if (priceUnit === 'per stay') return 'per stay';
         return priceUnit;
       },
-      confirm: (quantity, serviceName, amount) => `Add ${quantity} ${serviceName} for ${amount}`,
+      confirm: (quantity, serviceName, amount) => `Ask for ${quantity} ${serviceName} (${amount})`,
     },
     times: {
       title: 'Change time',
@@ -142,20 +154,33 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
       checkInTime: 'Check-in time',
       checkOutTime: 'Check-out time',
       noCharge: 'The days stay the same, so the price does not change.',
-      changeFailed: 'The time was not changed. Please try again.',
-      confirm: 'Change time',
+      changeFailed: 'Your request was not sent. Please try again.',
+      confirm: 'Ask to change the time',
     },
     notice: {
-      extended: (newDay, amount) =>
-        `Extended to ${newDay}. ${amount} was charged to your saved card.`,
-      extendedToBill: (newDay, amount) =>
-        `Extended to ${newDay}. ${amount} was added to your bill. You pay it at the desk when you check out.`,
-      addOnBooked: (quantity, serviceName, day, amount) =>
-        `Added ${quantity} ${serviceName} on ${day}. ${amount} was charged to your saved card.`,
-      addOnToBill: (quantity, serviceName, day, amount) =>
-        `Added ${quantity} ${serviceName} on ${day}. ${amount} was added to your bill. You pay it at the desk when you check out.`,
-      timesChanged: (checkIn, checkOut) =>
-        `Times changed. Check-in ${checkIn}, check-out ${checkOut}. Nothing was charged.`,
+      requested:
+        'Request sent. Our manager will check it, and you will hear the answer in your notifications and in the chat. Nothing changes until it is approved.',
+    },
+    requests: {
+      title: 'Your change requests',
+      status: {
+        pending: 'Waiting for our manager',
+        approved: 'Approved',
+        refused: 'Not approved',
+        cancelled: 'Withdrawn',
+      },
+      extend: (day, amount) => `Extend to ${day}${amount ? ` (${amount})` : ''}`,
+      addOn: (quantity, serviceName, day, amount) =>
+        `${quantity} ${serviceName} on ${day}${amount ? ` (${amount})` : ''}`,
+      times: (checkIn, checkOut) =>
+        `New time: ${[checkIn && `check-in ${checkIn}`, checkOut && `check-out ${checkOut}`]
+          .filter(Boolean)
+          .join(', ')}`,
+      earlyCheckOut: 'Pick up early',
+      reason: (reason) => `Reason: ${reason}`,
+      sentOn: (day) => `Sent ${day}`,
+      withdraw: 'Withdraw request',
+      withdrawFailed: "We couldn't withdraw the request. Please try again.",
     },
   },
   zh: {
@@ -179,7 +204,7 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
       amountChanged:
         '在你查看期间金额发生了变化，所以没有扣款。下面是现在的金额，请核对后再次确认。',
       chargedNow: '这笔费用现在从你保存的卡上扣除。',
-      addedToBill: '这笔费用会记入账单，离店时在前台支付。',
+      addedToBill: '这是发给经理的申请。批准后，这笔费用会记入账单，离店时在前台支付。',
     },
     extend: {
       title: '延长住宿',
@@ -189,13 +214,13 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
       longest: (days) => `最多可以延长 ${days} 天。`,
       check: '查询价格',
       checkFailed: '没能查询这个日期，请重试。',
-      extendFailed: '你的住宿没有延长，请重试。',
+      extendFailed: '申请没有发出，请重试。',
       summary: (newDay, nights, amount) =>
         `离店日期改为 ${newDay}，增加 ${nights}。新增晚数的费用是 ${amount}。`,
       petLine: (petName, nights, rate, amount) =>
         `${petName}：${nights}，每晚 ${rate}，共 ${amount}`,
-      confirm: (amount) => `延住并支付 ${amount}`,
-      confirmToBill: (amount) => `延住，${amount} 记入账单`,
+      confirm: (amount) => `发送申请（${amount}）`,
+      confirmToBill: (amount) => `发送申请（${amount}）`,
     },
     addOn: {
       title: '加一次散步或玩耍',
@@ -203,7 +228,7 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
         `为 ${petName} 在住宿期间的某一天增加一项服务。我们的团队会把它加入照护计划。`,
       loading: '正在加载可选服务…',
       loadFailed: '没能加载服务，请重试。',
-      addFailed: '没有添加任何服务，请重试。',
+      addFailed: '申请没有发出，请重试。',
       noOffers: '这次住宿没有可以添加的服务。',
       offer: '服务',
       day: '日期',
@@ -213,8 +238,7 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
         if (priceUnit === 'per stay') return '每次住宿';
         return priceUnit;
       },
-      confirm: (quantity, serviceName, amount) =>
-        `添加 ${quantity} 次 ${serviceName}，费用 ${amount}`,
+      confirm: (quantity, serviceName, amount) => `申请 ${quantity} 次 ${serviceName}（${amount}）`,
     },
     times: {
       title: '更改时间',
@@ -222,19 +246,32 @@ export const IN_STAY_CHANGES_COPY: PortalCopy<InStayChangesCopy> = {
       checkInTime: '入住时间',
       checkOutTime: '离店时间',
       noCharge: '日期不变，所以价格不变。',
-      changeFailed: '时间没有更改，请重试。',
-      confirm: '更改时间',
+      changeFailed: '申请没有发出，请重试。',
+      confirm: '申请更改时间',
     },
     notice: {
-      extended: (newDay, amount) => `已延长到 ${newDay}。已从你保存的卡上扣除 ${amount}。`,
-      extendedToBill: (newDay, amount) =>
-        `已延长到 ${newDay}。${amount} 已记入账单，离店时在前台支付。`,
-      addOnBooked: (quantity, serviceName, day, amount) =>
-        `已添加 ${day} 的 ${quantity} 次 ${serviceName}。已从你保存的卡上扣除 ${amount}。`,
-      addOnToBill: (quantity, serviceName, day, amount) =>
-        `已添加 ${day} 的 ${quantity} 次 ${serviceName}。${amount} 已记入账单，离店时在前台支付。`,
-      timesChanged: (checkIn, checkOut) =>
-        `时间已更改。入住 ${checkIn}，离店 ${checkOut}。没有收取任何费用。`,
+      requested: '申请已发出。经理会审核，结果会通过通知和聊天告诉你。批准之前不会有任何更改。',
+    },
+    requests: {
+      title: '你的更改申请',
+      status: {
+        pending: '等待经理审核',
+        approved: '已批准',
+        refused: '未批准',
+        cancelled: '已撤回',
+      },
+      extend: (day, amount) => `延长到 ${day}${amount ? `（${amount}）` : ''}`,
+      addOn: (quantity, serviceName, day, amount) =>
+        `${day} 的 ${quantity} 次 ${serviceName}${amount ? `（${amount}）` : ''}`,
+      times: (checkIn, checkOut) =>
+        `新时间：${[checkIn && `入住 ${checkIn}`, checkOut && `离店 ${checkOut}`]
+          .filter(Boolean)
+          .join('，')}`,
+      earlyCheckOut: '提前接走',
+      reason: (reason) => `原因：${reason}`,
+      sentOn: (day) => `${day} 提交`,
+      withdraw: '撤回申请',
+      withdrawFailed: '没能撤回申请，请重试。',
     },
   },
 };

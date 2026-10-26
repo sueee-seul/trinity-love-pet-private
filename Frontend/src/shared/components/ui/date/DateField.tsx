@@ -49,7 +49,7 @@ function clampToRange(day: Date, minDate: Date | null, maxDate: Date | null): Da
 /**
  * A date field drawn by us instead of the browser. A native date input is drawn in the browser's
  * own language whatever the page language is, so an English page in a Chinese Chrome showed
- * "年/月/日". This trigger and calendar follow the page language, or the `locale` prop.
+ * the Chinese "year/month/day". This trigger and calendar follow the page language, or the `locale` prop.
  */
 export const DateField: React.FC<DateFieldProps> = ({
   id,

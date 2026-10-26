@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ConciergeCopy } from '../../copy';
-import { useConciergeStatus } from '../../hooks/useConciergeStatus';
 import { useQuickConfirm } from '../../hooks/useQuickConfirm';
 import { QUICK_CONFIRM_COPY } from '../../quickConfirmCopy';
 import { selectBookedNeeds, useConciergeStore } from '../../store/conciergeStore';
@@ -13,7 +12,6 @@ import {
   SURFACE_CARD,
   TEXT_BUTTON,
 } from '../conciergeStyles';
-import { CardGuaranteeSection } from './CardGuaranteeSection';
 import { FullTermsDisclosure } from './FullTermsDisclosure';
 
 interface QuickConfirmCardProps {
@@ -32,7 +30,7 @@ const Row: React.FC<{ label: string; children: React.ReactNode }> = ({ label, ch
 );
 
 /**
- * "Book it for me", finished in one press: the stay the assistant set up, its price, the card, the
+ * "Book it for me", finished in one press: the stay the assistant set up, its price, the
  * terms in short with every clause on demand, and one sentence that gives both agreements the full
  * form asks for with its two boxes. When the chat did not give everything the booking needs, the
  * card says so and sends the guest to the full form instead of guessing.
@@ -46,8 +44,7 @@ export const QuickConfirmCard: React.FC<QuickConfirmCardProps> = ({
   const accepted = useConciergeStore((state) => state.accepted);
   const quote = useConciergeStore((state) => state.agreedQuote);
   const needs = useConciergeStore(selectBookedNeeds);
-  const status = useConciergeStatus();
-  const quick = useQuickConfirm(copy);
+  const quick = useQuickConfirm();
   const words = QUICK_CONFIRM_COPY[locale];
   const petNames = needs.pets.map((pet) => pet.name);
   const termsSummary = copy.details.termsSummary.map((term) =>
@@ -98,14 +95,7 @@ export const QuickConfirmCard: React.FC<QuickConfirmCardProps> = ({
         </div>
       ) : (
         <>
-          <CardGuaranteeSection
-            copy={copy}
-            locale={locale}
-            amount={accepted?.total ?? 0}
-            policy={status.policy}
-            guarantee={quick.guarantee}
-            onConfirmReady={quick.onConfirmReady}
-          />
+          <p className="m-0 type-body text-notice-secondary">{copy.details.payAtDesk}</p>
 
           <div className="flex flex-col gap-3">
             <p className="m-0 type-body font-semibold">{copy.details.requestNotice}</p>

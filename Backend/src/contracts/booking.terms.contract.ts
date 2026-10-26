@@ -4,7 +4,7 @@
  */
 
 /** Version of the reviewed terms shown by this release; mirrored by the checkout UI. */
-export const BOOKING_TERMS_VERSION = 'concierge-terms-2026-10-07';
+export const BOOKING_TERMS_VERSION = 'concierge-terms-2026-10-14';
 
 /**
  * The first version whose clause 8 lets a parent extend, shorten or add to a stay under way from

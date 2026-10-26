@@ -1,13 +1,13 @@
 import { useState, type ReactElement } from 'react';
 import { DateField } from '../../../../shared/components/ui/date';
 import { Modal } from '../../../../shared/components/ui/Modal/Modal';
-import { extendStay, previewExtension } from '../../api/stayChangesApi';
+import { previewExtension, requestExtension } from '../../api/stayChangesApi';
 import { usePortalCopy, usePortalLocale } from '../../i18n/portalLocale';
 import type { PetStay } from '../../types/stays';
 import {
   EXTENSION_PRICE_CHANGED,
   type ExtensionPreview,
-  type ExtensionResult,
+  type StayChangeRequest,
 } from '../../types/stayChanges';
 import { IN_STAY_CHANGES_COPY } from './inStayChangesCopy';
 import { StayDialogActions } from './StayDialogActions';
@@ -35,7 +35,7 @@ interface ExtendStayDialogProps {
   /** Every pet on the booking: the extension adds the nights for all of them. */
   petNames: string[];
   onClose: () => void;
-  onExtended: (result: ExtensionResult) => void;
+  onRequested: (request: StayChangeRequest) => void;
 }
 
 /** Adds nights to a stay under way at the rates booked, after showing what they cost. */
@@ -43,17 +43,18 @@ export function ExtendStayDialog({
   stay,
   petNames,
   onClose,
-  onExtended,
+  onRequested,
 }: ExtendStayDialogProps): ReactElement {
   const locale = usePortalLocale();
   const { extend: copy, shared } = usePortalCopy(IN_STAY_CHANGES_COPY);
   const { nights: nightsText } = usePortalCopy(STAYS_COPY).shared;
   const currentEnd = aucklandDateOf(stay.pickUpAt);
   const [endDate, setEndDate] = useState(() => addDays(currentEnd, 1));
-  const change = usePricedChange<ExtensionPreview, ExtensionResult>({
+  const change = usePricedChange<ExtensionPreview, StayChangeRequest>({
     preview: () => previewExtension(stay.bookingId, endDate),
-    apply: (preview) => extendStay(stay.bookingId, { endDate, expectedAmount: preview.amount }),
-    onApplied: onExtended,
+    apply: (preview) =>
+      requestExtension(stay.bookingId, { endDate, expectedAmount: preview.amount }),
+    onApplied: onRequested,
     changedCode: EXTENSION_PRICE_CHANGED,
     withNewAmount: (preview, amount) => ({ ...preview, amount }),
     copy: {

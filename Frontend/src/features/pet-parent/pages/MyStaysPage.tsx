@@ -12,6 +12,7 @@ import { STAYS_PANEL_ID, staysTabId } from '../components/stays/staysTabIds';
 import { PetStayCard } from '../components/stays/PetStayCard';
 import { BookingDetailsModal } from '../components/stays/BookingDetailsModal';
 import { StayChangeDialogs } from '../components/stays/StayChangeDialogs';
+import { StayChangeRequestList } from '../components/stays/StayChangeRequestList';
 import {
   dialogFromUrl,
   type OpenStayDialog,
@@ -57,6 +58,8 @@ export function MyStaysPage({
   const [detailsBookingPetId, setDetailsBookingPetId] = useState<string | null>(null);
   const [dialog, setDialog] = useState<OpenStayDialog | null>(null);
   const [notice, setNotice] = useState<StayChangeNotice | null>(null);
+  // Bumped after a change request is sent, so the request list reads again.
+  const [requestsVersion, setRequestsVersion] = useState(0);
 
   // `stays` overrides the fetch entirely (tests/previews). Otherwise load
   // the pet parent's real bookings once on mount.
@@ -157,6 +160,7 @@ export function MyStaysPage({
   const handleChanged = (done: StayChangeNotice): void => {
     setDialog(null);
     setNotice(done);
+    if (done.kind === 'requested') setRequestsVersion((version) => version + 1);
     load();
   };
 
@@ -237,6 +241,7 @@ export function MyStaysPage({
             {stayChangeNoticeText(notice, noticeCopy, locale)}
           </p>
         )}
+        {stays === undefined && <StayChangeRequestList refreshKey={requestsVersion} />}
         <div
           role="tabpanel"
           id={STAYS_PANEL_ID}

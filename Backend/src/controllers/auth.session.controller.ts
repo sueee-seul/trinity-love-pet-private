@@ -25,8 +25,12 @@ const GOOGLE_CLIENT_ID_SUFFIX = '.apps.googleusercontent.com';
  */
 export const googleClientConfig = (_req: Request, res: Response): Response => {
   const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+  // Not configured is a normal answer, not a fault: the page hides Google sign-in and keeps the
+  // email sign-in, without an error in the browser console.
   if (!clientId || !clientId.endsWith(GOOGLE_CLIENT_ID_SUFFIX)) {
-    return res.status(503).json({ code: 503, msg: 'Google sign-in is not configured', data: null });
+    return res
+      .status(200)
+      .json({ code: 200, msg: 'Google sign-in is not configured', data: { clientId: null } });
   }
 
   return res.status(200).json({
