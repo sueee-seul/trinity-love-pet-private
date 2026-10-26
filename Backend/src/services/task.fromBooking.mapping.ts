@@ -50,22 +50,6 @@ const addDays = (date: string, days: number): string => {
   return d.toISOString().slice(0, 10);
 };
 
-// The time of day (Pacific/Auckland) each generated task starts at, so staff and the pet parent
-// see a real time from the start. Two meals 11 hours apart follow vet guidance (two meals 8 to 12
-// hours apart, breakfast 6 to 8 AM, dinner 5 to 7 PM), at its late end because the facility's day
-// runs late. Medication follows breakfast so it goes down with food, and every time is at least
-// 30 minutes from the next, the gap one staff member needs between two tasks. Grooming has no
-// time: the manager fits it to the groomer's day.
-const TASK_CLOCK = {
-  morningMeal: '08:00',
-  medication: '08:30',
-  outdoorWalk: '10:30',
-  extraPlaytime: '16:00',
-  eveningMeal: '19:00',
-} as const;
-
-const MEAL_CLOCK = { morning: TASK_CLOCK.morningMeal, evening: TASK_CLOCK.eveningMeal } as const;
-
 // Number of nights the stay covers, minimum 1 - mirrors nightsBetween in
 // services/petparent.booking.ts, reimplemented here since that helper is
 // module-private and this is a different domain (tasks, not pricing).
@@ -78,7 +62,8 @@ const nightsBetween = (dropOffDate: string | null, pickUpDate: string | null): n
 
 export const buildTaskSpecs = (row: BookingTaskInputRow): GeneratedTaskSpec[] => {
   const specs: GeneratedTaskSpec[] = [];
-  // Date only: the day the stay starts.
+  // Date only: the day the stay starts. The manager sets the actual time when
+  // fitting the task to a staff member's shift.
   const dropOffDate = trimToNull(row.drop_off_date);
   const pickUpDate = trimToNull(row.pick_up_date);
   const nights = nightsBetween(dropOffDate, pickUpDate);
@@ -95,13 +80,8 @@ export const buildTaskSpecs = (row: BookingTaskInputRow): GeneratedTaskSpec[] =>
   const repeatForService = (service: BookingServiceRef | null): number =>
     service?.price_unit === 'per stay' ? 1 : nights;
 
-  // scheduled_at holds Auckland wall-clock time in the UTC slot, so the clock is written as UTC.
-  // With no clock the task keeps the date-only placeholder (midnight, "time not set").
-  const scheduledAtForDay = (day: number, clock?: string): string | null => {
-    if (!dropOffDate) return null;
-    const date = addDays(dropOffDate, day);
-    return clock ? `${date}T${clock}:00Z` : date;
-  };
+  const scheduledAtForDay = (day: number): string | null =>
+    dropOffDate ? addDays(dropOffDate, day) : null;
 
   const base = { petId: row.pet_id };
 
@@ -118,7 +98,7 @@ export const buildTaskSpecs = (row: BookingTaskInputRow): GeneratedTaskSpec[] =>
     for (const slot of ['morning', 'evening'] as const) {
       specs.push({
         ...base,
-        scheduledAt: scheduledAtForDay(day, MEAL_CLOCK[slot]),
+        scheduledAt: scheduledAtForDay(day),
         title: `Feeding (${slot})`,
         description: foodLabel,
         issue: feedingRoutine,
@@ -147,7 +127,7 @@ export const buildTaskSpecs = (row: BookingTaskInputRow): GeneratedTaskSpec[] =>
     for (let day = 0; day < repeatForService(playtimeService); day++) {
       specs.push({
         ...base,
-        scheduledAt: scheduledAtForDay(day, TASK_CLOCK.extraPlaytime),
+        scheduledAt: scheduledAtForDay(day),
         title: 'Extra Playtime',
         description: null,
         issue: null,
@@ -166,7 +146,7 @@ export const buildTaskSpecs = (row: BookingTaskInputRow): GeneratedTaskSpec[] =>
     for (let day = 0; day < repeatForService(medicationService); day++) {
       specs.push({
         ...base,
-        scheduledAt: scheduledAtForDay(day, TASK_CLOCK.medication),
+        scheduledAt: scheduledAtForDay(day),
         title: 'Medication Administration',
         description: null,
         issue: medicationInstructions,
@@ -181,7 +161,7 @@ export const buildTaskSpecs = (row: BookingTaskInputRow): GeneratedTaskSpec[] =>
     for (let day = 0; day < repeatForService(outdoorWalkService); day++) {
       specs.push({
         ...base,
-        scheduledAt: scheduledAtForDay(day, TASK_CLOCK.outdoorWalk),
+        scheduledAt: scheduledAtForDay(day),
         title: 'Outdoor Walk',
         description: null,
         issue: null,

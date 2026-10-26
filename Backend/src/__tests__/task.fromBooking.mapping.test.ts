@@ -17,18 +17,12 @@ const timesOf = (title: string, row: BookingTaskInputRow): (string | null)[] =>
     .map((spec) => spec.scheduledAt);
 
 describe('buildTaskSpecs times', () => {
-  it('feeds at 8:00 and 19:00 on every night of the stay', () => {
-    expect(timesOf('Feeding (morning)', stay())).toEqual([
-      '2026-10-05T08:00:00Z',
-      '2026-10-06T08:00:00Z',
-    ]);
-    expect(timesOf('Feeding (evening)', stay())).toEqual([
-      '2026-10-05T19:00:00Z',
-      '2026-10-06T19:00:00Z',
-    ]);
+  it('feeds twice on every night of the stay, with no time for the manager to set', () => {
+    expect(timesOf('Feeding (morning)', stay())).toEqual(['2026-10-05', '2026-10-06']);
+    expect(timesOf('Feeding (evening)', stay())).toEqual(['2026-10-05', '2026-10-06']);
   });
 
-  it('gives each paid daily service its own time, at least 30 minutes from breakfast', () => {
+  it('leaves each paid daily service on its day with no time, for the manager to set', () => {
     const row = stay({
       medication_instructions: 'Half a tablet',
       services: [
@@ -37,9 +31,9 @@ describe('buildTaskSpecs times', () => {
       ],
     });
 
-    expect(timesOf('Medication Administration', row)[0]).toBe('2026-10-05T08:30:00Z');
-    expect(timesOf('Outdoor Walk', row)[0]).toBe('2026-10-05T10:30:00Z');
-    expect(timesOf('Extra Playtime', row)[0]).toBe('2026-10-05T16:00:00Z');
+    expect(timesOf('Medication Administration', row)[0]).toBe('2026-10-05');
+    expect(timesOf('Outdoor Walk', row)[0]).toBe('2026-10-05');
+    expect(timesOf('Extra Playtime', row)[0]).toBe('2026-10-05');
   });
 
   it('leaves grooming on its day with no time, for the manager to set', () => {

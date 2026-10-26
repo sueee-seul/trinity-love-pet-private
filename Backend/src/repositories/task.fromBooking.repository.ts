@@ -65,9 +65,9 @@ export const findBookingPetTaskInput = (bookingPetsUuid: string): Promise<QueryR
 // task with that title on that day, so re-running the booking generation (approval,
 // then check-in) is a no-op instead of piling up duplicates. Generated tasks carry
 // no staff (employees_uuid NULL) and no template link (generated_from NULL); the
-// schema allows both. `scheduledAt` is the day with its usual time ('YYYY-MM-DDTHH:MM:00Z'),
-// or a date-only string cast to midnight when the task has no usual time (grooming); the
-// manager can move either when fitting the task to a staff shift. The day, not the time, is compared: once a manager has moved the
+// schema allows both. `scheduledAt` is a date-only string ('YYYY-MM-DD') for the
+// day, cast to midnight; the manager sets the real time when fitting the task to a
+// staff shift. The day, not the time, is compared: once a manager has moved the
 // medication task to 08:00, a second midnight copy would be a second dose.
 // scheduled_at holds Auckland wall-clock time in the UTC slot, so its day is read
 // in UTC.
